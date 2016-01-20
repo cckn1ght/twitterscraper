@@ -8,3 +8,5 @@ twitterscraper/settings.pyc
 twitterscraper/spiders/__init__.pyc
 
 twitterscraper/spiders/seleniumspider.pyc
+
+twitterscraper/spiders/search.pyc

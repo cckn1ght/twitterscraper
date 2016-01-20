@@ -60,8 +60,8 @@ class SearchSpider(scrapy.Spider):
 
         # delay_choices = [(1,30), (2,25), (3,20),(4,15),(5,10)]
         # delay_choices = [(1,50), (2,30), (3,10),(4,8),(5,2)] 
-        # delay_choices = [(1,90), (2,4), (3,3),(4,2),(5,1)]
-        delay_choices = [(1,60), (2,20), (3,10),(4,8),(5,2)]
+        delay_choices = [(1,90), (2,4), (3,3),(4,2),(5,1)]
+        # delay_choices = [(1,60), (2,20), (3,10),(4,8),(5,2)]
 
         if data is not None and data['items_html'] is not None:
             tweets = self.extract_tweets(data['items_html'])
@@ -95,7 +95,9 @@ class SearchSpider(scrapy.Spider):
                 yield self.parse_tweet(tweet)
 
             if self.min_tweet['tweet_id'] is not self.max_tweet['tweet_id']:
-                # Tracer()()
+                if(self.min_tweet['tweet_id']) is "672634504935264257":
+                    Tracer()()
+                    print
                 self.max_position = "TWEET-%s-%s-%s" % (
                     self.max_tweet['tweet_id'],
                     self.min_tweet['tweet_id'],
@@ -162,7 +164,7 @@ class SearchSpider(scrapy.Spider):
         soup = BeautifulSoup(items_html, "lxml")
         tweets = []
         twitter_username_re = re.compile(
-            r'(?<=^|(?<=[^a-zA-Z0-9-_\.]))@([A-Za-z_]+[A-Za-z0-9_]+)'
+            r'(?<=^|(?<=[^a-zA-Z0-9-_\.]))@([A-Za-z_]+[A-Za-z0-9_]+[A-Za-z]+[A-Za-z0-9])'
             # r'(?<=@)\w+'
             )
 
@@ -304,7 +306,7 @@ class SearchSpider(scrapy.Spider):
         params = {
             'vertical': 'default',
             # Query Param
-            'q': query+ ' '+'lang:en'+' '+ 'since:2006-03-21 until:2013-1-12',
+            'q': query+ ' '+'lang:en'+' '+ 'since:2006-03-21 until:2015-12-10',
             # Type Param
             'src': 'typd'
         }
