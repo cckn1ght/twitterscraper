@@ -95,9 +95,6 @@ class SearchSpider(scrapy.Spider):
                 yield self.parse_tweet(tweet)
 
             if self.min_tweet['tweet_id'] is not self.max_tweet['tweet_id']:
-                if(self.min_tweet['tweet_id']) is "672634504935264257":
-                    Tracer()()
-                    print
                 self.max_position = "TWEET-%s-%s-%s" % (
                     self.max_tweet['tweet_id'],
                     self.min_tweet['tweet_id'],
@@ -161,137 +158,146 @@ class SearchSpider(scrapy.Spider):
         :param items_html: The HTML block with tweets
         :return: A JSON list of tweets
         """
-        soup = BeautifulSoup(items_html, "lxml")
-        tweets = []
-        twitter_username_re = re.compile(
-            r'(?<=^|(?<=[^a-zA-Z0-9-_\.]))@([A-Za-z_]+[A-Za-z0-9_]+[A-Za-z]+[A-Za-z0-9])'
-            # r'(?<=@)\w+'
-            )
+        try:
+            soup = BeautifulSoup(items_html, "lxml")
+            tweets = []
+            twitter_username_re = re.compile(
+                r'(?<=^|(?<=[^a-zA-Z0-9-_\.]))@([A-Za-z_]+[A-Za-z0-9_]+[A-Za-z]+[A-Za-z0-9])'
+                # r'(?<=@)\w+'
+                )
 
-        for li in soup.find_all("li", class_='js-stream-item'):
+            for li in soup.find_all("li", class_='js-stream-item'):
 
-            # If our li doesn't have a tweet-id, we skip it as it's not going
-            # to be a tweet.
-            if 'data-item-id' not in li.attrs:
-                continue
-
-            tweet = {
-                'tweet_id': li['data-item-id'],
-                'text': None,
-                # 'is_retweet':false,
-                'user_id': None,
-                'user_screen_name': None,
-                # 'user_name': None,
-                'created_at': None,
-                # 'convo_url': None,
-                'image_url': [],
-                'num_retweets': 0,
-                'num_favorites': 0,
-                'keyword': []
-                }
-
-            text_p = li.find("p", class_="tweet-text")
-            if text_p is not None:
-                # Replace each emoji with its unicode value
-                # textElement.find('img.twitter-emoji').each((i, emoji) ->
-                #   $(emoji).html $(emoji).attr('alt')
-                # )
-                # Tacer()()
-                # pint
-                # [rint(text_p)
-                # emoji_dict = [
-                #     emoji for emoji in text_p.find_all(
-                #         "img", class_="twitter-emoji"
-                #     )
-                # ]
-                # def replace_all(text, dic):
-                #   for i, j in dic.iteritems():
-                #       text = text.replace(i, j)
-                #       return text
-                # len(emoji_dict) is not 0:
-                # for emoji in emoji_dict:
-                #     Tracer()()
-                    # text_p = text_p.replace(
-                    #     str(emoji), emoji['alt'].decode('ascii')
-                    #     )
-                tweet['text'] = text_p.get_text()               
-
-                # If there is any user mention containing the query, then pass the tweet.
-                # Tracer()()
-                user_mentions = twitter_username_re.match(tweet['text'])
-                if user_mentions and any([self.query.lower() in user_mention.lower() for user_mention in user_mentions.groups()]):
-                    logging.log(logging.DEBUG, 'Found '+self.query+' in '+user_mentions.groups()+': Drop tweet '+tweet['tweet_id'])
+                # If our li doesn't have a tweet-id, we skip it as it's not going
+                # to be a tweet.
+                if 'data-item-id' not in li.attrs:
                     continue
-                # If the keyword was found in the text and was the same with query, then accept the tweet 
-                if text_p.find("strong") and text_p.find("strong").get_text().lower() == self.query.lower():
-                    tweet['keyword'] = text_p.find("strong").get_text()
-                else:
-                    # The keyword is not in the text, then pass the tweet.
+
+                tweet = {
+                    'tweet_id': li['data-item-id'],
+                    'text': None,
+                    # 'is_retweet':false,
+                    'user_id': None,
+                    'user_screen_name': None,
+                    # 'user_name': None,
+                    'created_at': None,
+                    # 'convo_url': None,
+                    'image_url': [],
+                    'num_retweets': 0,
+                    'num_favorites': 0,
+                    'keyword': []
+                    }
+                if tweet['tweet_id'] is "672603015359176704": #672602236103602176
+                    Tracer()()
+                    print
+
+                text_p = li.find("p", class_="tweet-text")
+                if text_p is not None:
+                    # Replace each emoji with its unicode value
+                    # textElement.find('img.twitter-emoji').each((i, emoji) ->
+                    #   $(emoji).html $(emoji).attr('alt')
+                    # )
+                    # Tacer()()
+                    # pint
+                    # [rint(text_p)
+                    # emoji_dict = [
+                    #     emoji for emoji in text_p.find_all(
+                    #         "img", class_="twitter-emoji"
+                    #     )
+                    # ]
+                    # def replace_all(text, dic):
+                    #   for i, j in dic.iteritems():
+                    #       text = text.replace(i, j)
+                    #       return text
+                    # len(emoji_dict) is not 0:
+                    # for emoji in emoji_dict:
+                    #     Tracer()()
+                        # text_p = text_p.replace(
+                        #     str(emoji), emoji['alt'].decode('ascii')
+                        #     )
+                    tweet['text'] = text_p.get_text()               
+
+                    # If there is any user mention containing the query, then pass the tweet.
                     # Tracer()()
-                    logging.log(logging.DEBUG, 'No '+self.query+' in the content of tweet'+': Drop tweet '+tweet['tweet_id'])
-                    continue                   
-            else:
-                logging.log(logging.DEBUG, 'No content in the tweet'+': Drop tweet '+tweet['tweet_id'])
-                continue
-            # Tweet isRetweet
-            # is_retweet = li.find('js-retweet-text').length is not 0
+                    user_mentions = twitter_username_re.match(tweet['text'])
+                    if user_mentions and any([self.query.lower() in user_mention.lower() for user_mention in user_mentions.groups()]):
+                        logging.log(logging.DEBUG, 'Found '+self.query+' in '+ str(user_mentions.groups())+': Drop tweet '+tweet['tweet_id'])
+                        continue
+                    # If the keyword was found in the text and was the same with query, then accept the tweet 
+                    if text_p.find("strong") and text_p.find("strong").get_text().lower() == self.query.lower():
+                        tweet['keyword'] = text_p.find("strong").get_text()
+                    else:
+                        # The keyword is not in the text, then pass the tweet.
+                        # Tracer()()
+                        logging.log(logging.DEBUG, 'No '+self.query+' in the content of tweet'+': Drop tweet '+tweet['tweet_id'])
+                        continue                   
+                else:
+                    logging.log(logging.DEBUG, 'No content in the tweet'+': Drop tweet '+tweet['tweet_id'])
+                    continue
+                # Tweet isRetweet
+                # is_retweet = li.find('js-retweet-text').length is not 0
 
-            # Tweet User ID, User Screen Name, User Name
-            user_details_div = li.find("div", class_="tweet")
-            if user_details_div is not None:
-                tweet['user_id'] = user_details_div['data-user-id']
-                tweet['user_screen_name'] = user_details_div[
-                    'data-screen-name']
-                # tweet['user_name'] = user_details_div['data-name']
-                # Tracer()()
-            # Tweet date
-            date_span = li.find("span", class_="_timestamp")
-            if date_span is not None:
-                # tweet['created_at'] = float(date_span['data-time-ms'])
-                tweet['created_at'] = int(date_span['data-time'])
-                
-            # Tweet conversation url
-            # convo_a_tag = li.find("div",class_="stream-item-footer").find_next("a",class_="js-details")
-            # if convo_a_tag is not None:
-            #   print
-            #   print "convo_a_tag:"+ str(convo_a_tag['href'])
-            #   print
-            # tweet['convo_url'] = str(convo_a_tag)
+                # Tweet User ID, User Screen Name, User Name
+                user_details_div = li.find("div", class_="tweet")
+                if user_details_div is not None:
+                    tweet['user_id'] = user_details_div['data-user-id']
+                    tweet['user_screen_name'] = user_details_div[
+                        'data-screen-name']
+                    # tweet['user_name'] = user_details_div['data-name']
+                    # Tracer()()
+                # Tweet date
+                date_span = li.find("span", class_="_timestamp")
+                if date_span is not None:
+                    # tweet['created_at'] = float(date_span['data-time-ms'])
+                    tweet['created_at'] = int(date_span['data-time'])
+                    
+                # Tweet conversation url
+                # convo_a_tag = li.find("div",class_="stream-item-footer").find_next("a",class_="js-details")
+                # if convo_a_tag is not None:
+                #   print
+                #   print "convo_a_tag:"+ str(convo_a_tag['href'])
+                #   print
+                # tweet['convo_url'] = str(convo_a_tag)
 
-            # Tweet image url
-            img_url_divs = li.select("div.js-old-photo")
-            if len(img_url_divs) > 0:
-                for img_url_div in img_url_divs:
-                    tweet['image_url'].append(img_url_div['data-image-url'])
+                # Tweet image url
+                img_url_divs = li.select("div.js-old-photo")
+                if len(img_url_divs) > 0:
+                    for img_url_div in img_url_divs:
+                        tweet['image_url'].append(img_url_div['data-image-url'])
 
-            # Tweet Retweets
-            retweet_span = li.select(
-                "span.ProfileTweet-action--retweet > span.ProfileTweet-actionCount")
-            if retweet_span is not None and len(retweet_span) > 0:
-                tweet['num_retweets'] = int(
-                    retweet_span[0]['data-tweet-stat-count'])
+                # Tweet Retweets
+                retweet_span = li.select(
+                    "span.ProfileTweet-action--retweet > span.ProfileTweet-actionCount")
+                if retweet_span is not None and len(retweet_span) > 0:
+                    tweet['num_retweets'] = int(
+                        retweet_span[0]['data-tweet-stat-count'])
 
-            # Tweet Favourites
-            favorite_span = li.select(
-                "span.ProfileTweet-action--favorite > span.ProfileTweet-actionCount")
-            if favorite_span is not None and len(retweet_span) > 0:
-                tweet['num_favorites'] = int(
-                    favorite_span[0]['data-tweet-stat-count'])
+                # Tweet Favourites
+                favorite_span = li.select(
+                    "span.ProfileTweet-action--favorite > span.ProfileTweet-actionCount")
+                if favorite_span is not None and len(retweet_span) > 0:
+                    tweet['num_favorites'] = int(
+                        favorite_span[0]['data-tweet-stat-count'])
 
-            # self.parse_tweet(tweet)
-            # Tracer()()#break point
-            try:
-                # Tracer()()
-                time_str = datetime.datetime.fromtimestamp(tweet["created_at"]).strftime('%Y-%m-%d %H:%M:%S')
-                print
-                print tweet['tweet_id'] + ': ' + time_str + ' ' + tweet['text']
-                print
-            except Exception, e:
-                # Tracer()()
-                print "ERROR(extract _timestamp): %s"%(str(e),)
-            
-            tweets.append(tweet)
-        return tweets
+                # self.parse_tweet(tweet)
+                # Tracer()()#break point
+                try:
+                    # Tracer()()
+                    time_str = datetime.datetime.fromtimestamp(tweet["created_at"]).strftime('%Y-%m-%d %H:%M:%S')
+                    print
+                    print tweet['tweet_id'] + ': ' + time_str + ' ' + tweet['text']
+                    print
+                except Exception, e:
+                    # Tracer()()
+                    print "ERROR(extract _timestamp): %s"%(str(e),)
+                    traceback.print_exc()
+
+                tweets.append(tweet)
+            return tweets
+        except Exception, e:
+            Tracer()()
+            print "ERROR(extract_tweets): %s"%(str(e),)
+            traceback.print_exc()
 
     @staticmethod
     def construct_url(query, max_position=None, operater="max_position"):
@@ -306,7 +312,7 @@ class SearchSpider(scrapy.Spider):
         params = {
             'vertical': 'default',
             # Query Param
-            'q': query+ ' '+'lang:en'+' '+ 'since:2006-03-21 until:2015-12-10',
+            'q': query+ ' '+'lang:en'+' '+ 'since:2006-03-21 until:2015-12-10', #2015-12-10
             # Type Param
             'src': 'typd'
         }

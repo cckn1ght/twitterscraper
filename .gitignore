@@ -10,3 +10,11 @@ twitterscraper/spiders/__init__.pyc
 twitterscraper/spiders/seleniumspider.pyc
 
 twitterscraper/spiders/search.pyc
+
+twitterscraper/spiders/search.pyc
+
+twitterscraper/contrib/downloadmiddleware/rotate_useragent.pyc
+
+twitterscraper/spiders/search.pyc
+
+twitterscraper/contrib/downloadmiddleware/rotate_useragent.pyc
