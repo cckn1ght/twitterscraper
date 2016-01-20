@@ -10,10 +10,11 @@ import sys
 import datetime
 import traceback
 import pymongo
+from pymongo import errors
 
 from scrapy.exceptions import DropItem
 from scrapy import settings
-from scrapy import log
+import logging
 
 class MongoDBPipeline(object):
     def __init__(self):
@@ -58,14 +59,30 @@ class MongoDBPipeline(object):
             'text': item.get('text'),
             'created_at': item.get('created_at'),
             'image_url': item.get('image_url', []),
+            'supplement': item.get('supplement',[]),
+            'keyword': item.get('keyword', []),
             'num_retweets': item.get('num_retweets'),
             'num_favorites': item.get('num_retweets'),
             'update_time': datetime.datetime.utcnow(),
         }
         # collection_name = item.__class__.__name__
-        result=self.db["tweet_detail"].insert(tweet_detail)
-        item["mongodb_id"] = str(result)
-        return item
+        '''
+        Checking if record exists in MongoDB
+        '''
+        try:
+            # Tracer()()
+            result=self.db["tweet_detail"].insert(tweet_detail)
+            item["mongodb_id"] = str(result)
+            # Tracer()()
+            # DuplicatesPipeline.ids_seen.add(item['tweet_id'])
+            return item
+        # except Exception as e:
+        except errors.DuplicateKeyError as dke:
+            raise DropItem("Duplicate item found: %s" % item)
+            traceback.print_exc()
+        except Exception as e:
+            logging.log(logging.ERROR,"ERROR(MongodbPipeline): %s"%(str(e),) )   
+            traceback.print_exc()
 
 class DuplicatesPipeline(object):
 
@@ -78,3 +95,15 @@ class DuplicatesPipeline(object):
         else:
             self.ids_seen.add(item['tweet_id'])
             return item
+
+# class DuplicatesPipeline(object):
+
+#     def __init__(self):
+#         self.ids_seen = set()
+
+#     def process_item(self, item, spider):
+#         if item['tweet_id'] in self.ids_seen:
+#             raise DropItem("Duplicate item found: %s" % item)
+#         else:
+#             self.ids_seen.add(item['tweet_id'])
+#             return item

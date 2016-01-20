@@ -5,7 +5,7 @@ from twisted.internet import reactor
 from twisted.internet import defer
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.project import get_project_settings
-from scrapy import log
+import logging
 # from scrapy import signals
 # from twitterscraper.spiders.search import SearchSpider
 
@@ -16,10 +16,13 @@ from IPython.core.debugger import Tracer
 
 runner = CrawlerRunner(get_project_settings())
 
-q = 'from:TangTotoro'
+q = 'echinacea'
 d = runner.crawl('search', domain='twitter.com', query=q)
 
 d.addBoth(lambda _: reactor.stop())
-log.msg('Reactor activated...')
+# log.msg('Reactor activated...')
+# reactor.run()# the script will block here until all crawling jobs are finished
+# log.msg('Reactor stopped.')
+logging.log(logging.INFO,'Reactor activated...')
 reactor.run()# the script will block here until all crawling jobs are finished
-log.msg('Reactor stopped.')
+logging.log(logging.INFO,'Reactor stopped.')

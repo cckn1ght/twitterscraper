@@ -24,7 +24,7 @@ CONCURRENT_REQUESTS=16
 # Configure a delay for requests for the same website (default: 0)
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-DOWNLOAD_DELAY=3
+DOWNLOAD_DELAY=6
 # The download delay setting will honor only one of:
 # CONCURRENT_REQUESTS_PER_DOMAIN=16
 CONCURRENT_REQUESTS_PER_IP=16
@@ -103,7 +103,7 @@ DOWNLOADER_MIDDLEWARES = {
     # 'twitterscraper.contrib.downloadmiddleware.google_cache.GoogleCacheMiddleware':0,
     'scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware': None,
     'twitterscraper.contrib.downloadmiddleware.rotate_useragent.RotateUserAgentMiddleware':400,
-    'scrapy.contrib.downloadermiddleware.retry.RetryMiddleware': 90,
+    'scrapy.downloadermiddlewares.retry.RetryMiddleware': 90,
     # Fix path to this module
     # 'twitterscraper.contrib.downloadmiddleware.randomproxy.RandomProxy': 100,
     # 'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 110,
@@ -127,6 +127,7 @@ GOOGLE_CACHE_DOMAINS = ['twitter.com',]
 # http://host3:port
 # ...
 PROXY_LIST = '_reliable_list.txt'
+USER_AGENT_LIST = "_user_agent_list.txt"
 LOG_FILE = "logs/scrapy.log"
 
 # scrapy-webdriver settings

@@ -6,16 +6,19 @@ import urlparse
 from urlparse import urlunparse
 from urllib import urlencode
 from urllib import urlopen
+from urllib import quote
 import json
 import re
 import random
+# from random import random
+from bisect import bisect
 # from string import decode
 from bs4 import BeautifulSoup
 from collections import OrderedDict
 
 # from scrapy.spider import BaseSpider
 import scrapy
-from scrapy import log
+import logging
 # from scrapy.spiders import Spider
 # from scrapy.selector import HtmlXPathSelector
 from scrapy.http import Request
@@ -44,7 +47,7 @@ class SearchSpider(scrapy.Spider):
         """
         self.query = query
         url = self.construct_url(self.query)
-        Tracer()()
+        # Tracer()()
         self.start_urls.append(url)
 
     def parse(self, response):
@@ -52,19 +55,25 @@ class SearchSpider(scrapy.Spider):
         random_str = "BD1UO2FFu9QAAAAAAAAETAAAAAcAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 
         data = json.loads(response.body_as_unicode())
+        #default rate delay is 12s
+        rate_delay = self.settings['DOWNLOAD_DELAY']
+
+        # delay_choices = [(1,30), (2,25), (3,20),(4,15),(5,10)]
+        # delay_choices = [(1,50), (2,30), (3,10),(4,8),(5,2)] 
+        delay_choices = [(1,90), (2,4), (3,3),(4,2),(5,1)]
 
         if data is not None and data['items_html'] is not None:
             tweets = self.extract_tweets(data['items_html'])
             # If we have no tweets, then we can break the loop early
             if len(tweets) == 0:
-                # Tracer()()
+                Tracer()()
                 # self.max_position = "TWEET-%s-%s-%s" % (self.max_tweet['tweet_id'], self.min_tweet['tweet_id'],random_str)
                 # next_url = self.construct_url(self.query, max_position=self.max_position,operater="min_position")
                 # Sleep for our rate_delay
                 # time.sleep( random.uniform(0, self.settings['DOWNLOAD_DELAY']))
                 pprint(data)
-                log.msg(data)
-                log.msg(
+                logging.log(logging.DEBUG,data)
+                logging.log(logging.INFO,
                     "Reach the end of search results( " + self.query + " )")
                 return
                 # yield Request(url=next_url, callback=self.parse)
@@ -97,13 +106,29 @@ class SearchSpider(scrapy.Spider):
                     operater="max_position")
                 # Sleep for our rate_delay
                 # Tracer()()
-                time.sleep(random.uniform(0, self.settings['DOWNLOAD_DELAY']))
+                delay_multiple = self.weighted_choice(delay_choices)
+                delay_time = random.uniform(rate_delay*(delay_multiple-1), rate_delay*delay_multiple)
+                logging.log(logging.DEBUG,"Sleep for "+ str(delay_time) +" seconds")
+                time.sleep(delay_time)               
                 print
                 print "Next Request:" + "TWEET-%s-%s" % (
                     self.max_tweet['tweet_id'], self.min_tweet['tweet_id'])
                 print
-                Tracer()()
+                # Tracer()()
                 yield Request(url=next_url, callback=self.parse)
+
+    def weighted_choice(self,choices):
+        # Tracer()()
+        values, weights = zip(*choices)
+        total = 0
+        cum_weights = []
+        for w in weights:
+            total += w
+            cum_weights.append(total)
+        x = random.random() * total
+        i = bisect(cum_weights, x)
+        # Tracer()()
+        return values[i]
 
     def parse_tweet(self, tweet):
         tweet_item = items.TwitterscraperItem()
@@ -116,6 +141,8 @@ class SearchSpider(scrapy.Spider):
         tweet_item['image_url'] = tweet['image_url']
         tweet_item['num_retweets'] = tweet['num_retweets']
         tweet_item['num_favorites'] = tweet['num_favorites']
+        tweet_item['keyword'] = tweet['keyword']
+        tweet_item['supplement'] = self.query
         return tweet_item
 
     def extract_tweets(self, items_html):
@@ -144,8 +171,9 @@ class SearchSpider(scrapy.Spider):
                 # 'convo_url': None,
                 'image_url': [],
                 'num_retweets': 0,
-                'num_favorites': 0
-            }
+                'num_favorites': 0,
+                'keyword': []
+                }
 
             text_p = li.find("p", class_="tweet-text")
             if text_p is not None:
@@ -172,11 +200,16 @@ class SearchSpider(scrapy.Spider):
                     #     str(emoji), emoji['alt'].decode('ascii')
                     #     )
                 tweet['text'] = text_p.get_text()
+                # print 'text_p.find("strong"):'+ str(type(text_p.find("strong")))
+                # Tracer()()
 
-                # print
-                # pprint(text_p_decoded)
-                # tweet['text'] = text_p_decoded
+                
 
+                if text_p.find("strong"):
+                    tweet['keyword'] = text_p.find("strong").get_text()               
+            else:
+                # Tracer()()
+                continue
             # Tweet isRetweet
             # is_retweet = li.find('js-retweet-text').length is not 0
 
@@ -193,7 +226,7 @@ class SearchSpider(scrapy.Spider):
             if date_span is not None:
                 # tweet['created_at'] = float(date_span['data-time-ms'])
                 tweet['created_at'] = int(date_span['data-time'])
-
+                
             # Tweet conversation url
             # convo_a_tag = li.find("div",class_="stream-item-footer").find_next("a",class_="js-details")
             # if convo_a_tag is not None:
@@ -224,11 +257,16 @@ class SearchSpider(scrapy.Spider):
 
             # self.parse_tweet(tweet)
             # Tracer()()#break point
-            print
-            print tweet['tweet_id'] + ': ' + datetime.datetime.fromtimestamp(
-                tweet["created_at"]
-            ).strftime('%Y-%m-%d %H:%M:%S') + ' ' + tweet['text']
-            print
+            try:
+                # Tracer()()
+                time_str = datetime.datetime.fromtimestamp(tweet["created_at"]).strftime('%Y-%m-%d %H:%M:%S')
+                print
+                print tweet['tweet_id'] + ': ' + time_str + ' ' + tweet['text']
+                print
+            except Exception, e:
+                # Tracer()()
+                print "ERROR(extract _timestamp): %s"%(str(e),)
+            
             tweets.append(tweet)
         return tweets
 
@@ -245,10 +283,25 @@ class SearchSpider(scrapy.Spider):
         params = {
             'vertical': 'default',
             # Query Param
-            'q': query,
+            'q': query+ ' '+'lang:en'+' '+ 'since:2006-03-21 until:2013-01-20',
             # Type Param
             'src': 'typd'
         }
+
+        #todo develop a query operator recognize function
+        # def doit(text):
+        #     import re
+        #     matches=re.findall(r'\"(.+?)\"',text)
+        #     # matches is now ['String 1', 'String 2', 'String3']
+        #     return ",".join(matches)
+
+        # q = doit(query) 
+
+        # params = {
+        #     'vertical': 'default',            
+        #     # Type Param
+        #     'src': 'typd'
+        # }
 
         # If our max_position param is not None, we add it to the parameters
         if operater == "max_position":
@@ -267,8 +320,11 @@ class SearchSpider(scrapy.Spider):
                 params['interval'] = '30000'
                 params['latent_count'] = '0'
                 params['min_position'] = max_position
-        url_tupple = ('https', 'twitter.com', '/i/search/timeline',
-                      '', urlencode(OrderedDict(params)), '')
+        # url_tupple = ('https', 'twitter.com', '/i/search/timeline',
+        #               '', urlencode(OrderedDict(params)), '')
+        url_tupple = ['https', 'twitter.com', '/i/search/timeline',
+                      '', urlencode(OrderedDict(params)), '']
+        # Tracer()()
         # url_tupple = ('https', 'twitter.com', 'i/profiles/show/'+user_screen_name+'/timeline/with_replies', '', urlencode(params), '')
         return urlunparse(url_tupple)
         # print urlunparse(url_tupple)

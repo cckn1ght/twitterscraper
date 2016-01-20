@@ -22,3 +22,5 @@ class TwitterscraperItem(scrapy.Item):
     image_url = Field()
     num_retweets = Field()
     num_favorites = Field()
+    supplement = Field()
+    keyword = Field()
