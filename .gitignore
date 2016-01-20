@@ -1,0 +1,10 @@
+
+*.log
+
+Twitter XHR.txt
+
+twitterscraper/settings.pyc
+
+twitterscraper/spiders/__init__.pyc
+
+twitterscraper/spiders/seleniumspider.pyc

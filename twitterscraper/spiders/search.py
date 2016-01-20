@@ -60,7 +60,8 @@ class SearchSpider(scrapy.Spider):
 
         # delay_choices = [(1,30), (2,25), (3,20),(4,15),(5,10)]
         # delay_choices = [(1,50), (2,30), (3,10),(4,8),(5,2)] 
-        delay_choices = [(1,90), (2,4), (3,3),(4,2),(5,1)]
+        # delay_choices = [(1,90), (2,4), (3,3),(4,2),(5,1)]
+        delay_choices = [(1,60), (2,20), (3,10),(4,8),(5,2)]
 
         if data is not None and data['items_html'] is not None:
             tweets = self.extract_tweets(data['items_html'])
@@ -86,7 +87,7 @@ class SearchSpider(scrapy.Spider):
 
             # continue_search = self.save_tweets(tweets)
 
-            # Our max tweet is the last tweet in the list
+            # The max tweet is the last tweet in the list
             self.max_tweet = tweets[-1]
 
             for tweet in tweets:
@@ -99,17 +100,19 @@ class SearchSpider(scrapy.Spider):
                     self.max_tweet['tweet_id'],
                     self.min_tweet['tweet_id'],
                     random_str)
-                # self.max_position = self.max_tweet['tweet_id']
+                #Construct next url to crawl
                 next_url = self.construct_url(
                     self.query,
                     max_position=self.max_position,
                     operater="max_position")
-                # Sleep for our rate_delay
+
+                # Sleep for rate_delay
                 # Tracer()()
                 delay_multiple = self.weighted_choice(delay_choices)
                 delay_time = random.uniform(rate_delay*(delay_multiple-1), rate_delay*delay_multiple)
                 logging.log(logging.DEBUG,"Sleep for "+ str(delay_time) +" seconds")
-                time.sleep(delay_time)               
+                time.sleep(delay_time) 
+
                 print
                 print "Next Request:" + "TWEET-%s-%s" % (
                     self.max_tweet['tweet_id'], self.min_tweet['tweet_id'])
@@ -117,7 +120,12 @@ class SearchSpider(scrapy.Spider):
                 # Tracer()()
                 yield Request(url=next_url, callback=self.parse)
 
-    def weighted_choice(self,choices):
+    def weighted_choice(self, choices):
+        """
+        Random select weighted choices
+        :param choices: The pair of values and weights
+        :return: A weighted value
+        """
         # Tracer()()
         values, weights = zip(*choices)
         total = 0
@@ -153,6 +161,11 @@ class SearchSpider(scrapy.Spider):
         """
         soup = BeautifulSoup(items_html, "lxml")
         tweets = []
+        twitter_username_re = re.compile(
+            r'(?<=^|(?<=[^a-zA-Z0-9-_\.]))@([A-Za-z_]+[A-Za-z0-9_]+)'
+            # r'(?<=@)\w+'
+            )
+
         for li in soup.find_all("li", class_='js-stream-item'):
 
             # If our li doesn't have a tweet-id, we skip it as it's not going
@@ -199,16 +212,24 @@ class SearchSpider(scrapy.Spider):
                     # text_p = text_p.replace(
                     #     str(emoji), emoji['alt'].decode('ascii')
                     #     )
-                tweet['text'] = text_p.get_text()
-                # print 'text_p.find("strong"):'+ str(type(text_p.find("strong")))
+                tweet['text'] = text_p.get_text()               
+
+                # If there is any user mention containing the query, then pass the tweet.
                 # Tracer()()
-
-                
-
-                if text_p.find("strong"):
-                    tweet['keyword'] = text_p.find("strong").get_text()               
+                user_mentions = twitter_username_re.match(tweet['text'])
+                if user_mentions and any([self.query.lower() in user_mention.lower() for user_mention in user_mentions.groups()]):
+                    logging.log(logging.DEBUG, 'Found '+self.query+' in '+user_mentions.groups()+': Drop tweet '+tweet['tweet_id'])
+                    continue
+                # If the keyword was found in the text and was the same with query, then accept the tweet 
+                if text_p.find("strong") and text_p.find("strong").get_text().lower() == self.query.lower():
+                    tweet['keyword'] = text_p.find("strong").get_text()
+                else:
+                    # The keyword is not in the text, then pass the tweet.
+                    # Tracer()()
+                    logging.log(logging.DEBUG, 'No '+self.query+' in the content of tweet'+': Drop tweet '+tweet['tweet_id'])
+                    continue                   
             else:
-                # Tracer()()
+                logging.log(logging.DEBUG, 'No content in the tweet'+': Drop tweet '+tweet['tweet_id'])
                 continue
             # Tweet isRetweet
             # is_retweet = li.find('js-retweet-text').length is not 0
@@ -283,7 +304,7 @@ class SearchSpider(scrapy.Spider):
         params = {
             'vertical': 'default',
             # Query Param
-            'q': query+ ' '+'lang:en'+' '+ 'since:2006-03-21 until:2013-01-20',
+            'q': query+ ' '+'lang:en'+' '+ 'since:2006-03-21 until:2013-1-12',
             # Type Param
             'src': 'typd'
         }
