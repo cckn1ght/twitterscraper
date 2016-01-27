@@ -44,9 +44,14 @@ class RotateUserAgentMiddleware(UserAgentMiddleware):
         return obj
 
     def process_request(self, request, spider):
-        if random.choice(xrange(1,100)) <= 30:
-            user_agent = random.choice(self.user_agent_list)
-            if user_agent:
-                logging.log(logging.DEBUG,'Change user agent to :'+user_agent)
-                # Tracer()()
-                request.headers.setdefault('User-Agent', user_agent)
+        try:
+            if random.choice(xrange(1,100)) <= 33:
+                user_agent = random.choice(self.user_agent_list)
+                if user_agent:
+                    logging.log(logging.DEBUG,'Change user agent to :'+user_agent)
+                    # Tracer()()
+                    request.headers.setdefault('User-Agent', user_agent)
+        except Exception, e:
+            Tracer()()
+            logging.log( logging.DEBUG,"ERROR(RotateUserAgentMiddleware): %s"%(str(e),))
+            traceback.print_exc()

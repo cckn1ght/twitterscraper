@@ -24,7 +24,7 @@ CONCURRENT_REQUESTS=16
 # Configure a delay for requests for the same website (default: 0)
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-DOWNLOAD_DELAY=6
+DOWNLOAD_DELAY=0.25
 # The download delay setting will honor only one of:
 # CONCURRENT_REQUESTS_PER_DOMAIN=16
 CONCURRENT_REQUESTS_PER_IP=16
@@ -62,7 +62,9 @@ CONCURRENT_REQUESTS_PER_IP=16
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-   'twitterscraper.pipelines.MongoDBPipeline': 300,
+   # 'twitterscraper.pipelines.CustomMongoDBPipeline': 300,
+   'scrapy_mongodb.MongoDBPipeline':300,
+   # 'twitterscraper.pipelines.MongoDBPipeline_test': 300,
    'twitterscraper.pipelines.DuplicatesPipeline': 250,
 }
 
@@ -71,11 +73,11 @@ ITEM_PIPELINES = {
 # NOTE: AutoThrottle will honour the standard settings for concurrency and delay
 AUTOTHROTTLE_ENABLED=True
 # The initial download delay
-AUTOTHROTTLE_START_DELAY=3
+AUTOTHROTTLE_START_DELAY=3.0
 # The maximum download delay to be set in case of high latencies
-AUTOTHROTTLE_MAX_DELAY=60
+AUTOTHROTTLE_MAX_DELAY=60.0
 # Enable showing throttling stats for every response received:
-AUTOTHROTTLE_DEBUG=False
+AUTOTHROTTLE_DEBUG=True
 AUTOTHROTTLE_CONCURRENCY_CHECK_PERIOD = 10#How many responses should pass to perform concurrency adjustments.
 
 # Enable and configure HTTP caching (disabled by default)
@@ -144,7 +146,15 @@ LOG_FILE = "logs/scrapy.log"
                                  # or 'your_package.CustomWebdriverClass'
                                  # or an actual class instead of a string.
 
-MONGODB_SERVER = "localhost"
-MONGODB_PORT = 27017
-MONGODB_DB = "tweets"
-MONGODB_COLLECTION = "tweet_detail"
+# MONGODB_SERVER = "localhost"
+# MONGODB_PORT = 27017
+# MONGODB_DB = "tweets"
+# MONGODB_COLLECTION = "tweet_detail"
+
+# Basic configuration of scrapy-mongodb
+# See http://sebdah.github.io/scrapy-mongodb/
+MONGODB_URI = 'mongodb://localhost:27017'
+MONGODB_DATABASE = 'tweets'
+MONGODB_COLLECTION = 'tweet_detail'
+MONGODB_ADD_TIMESTAMP = True
+MONGODB_BUFFER_DATA = 10

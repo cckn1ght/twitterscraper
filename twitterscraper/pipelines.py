@@ -16,7 +16,28 @@ from scrapy.exceptions import DropItem
 from scrapy import settings
 import logging
 
-class MongoDBPipeline(object):
+from scrapy_mongodb import MongoDBPipeline
+
+class DuplicatesPipeline(MongoDBPipeline):
+
+    def process_item(self, item, spider):
+        # if the connection exists, don't save it
+        matching_item = self.collection.find_one(
+            {#'session_id': item['session_id'],
+             'tweet_id': item['tweet_id'],
+             'user_name': item['user_name']}
+        )
+        if matching_item is not None:
+            Tracer()()
+            raise DropItem(
+                "Duplicate found for %s, %s" %
+                (item['user_name'], item['tweet_id'])
+            )
+        else:
+            return item
+
+
+class MongoDBPipeline_test(object):
     def __init__(self):
         self.MONGODB_SERVER = "localhost"
         self.MONGODB_PORT = 27017
@@ -43,11 +64,14 @@ class MongoDBPipeline(object):
             self.client = pymongo.MongoClient(self.MONGODB_SERVER, self.MONGODB_PORT) 
             self.db = self.client[self.MONGODB_DB]
         except Exception as e:
+            Tracer()()
             print self.style.ERROR("ERROR(MongodbPipeline): %s"%(str(e),))
             traceback.print_exc()
 
     def close_spider(self, spider):
+        Tracer()()
         self.client.close()
+
 
     def process_item(self, item, spider):
         tweet_detail = {
@@ -56,8 +80,9 @@ class MongoDBPipeline(object):
             # 'is_retweet': item.get('is_retweet'),
             'user_id': item.get('user_id'),
             'user_screen_name': item.get('user_screen_name'),
+            'user_name': item.get('user_name'),
             'text': item.get('text'),
-            'created_at': item.get('created_at'),
+            'created_at_ts': item.get('created_at_ts'),
             'image_url': item.get('image_url', []),
             'supplement': item.get('supplement',[]),
             'keyword': item.get('keyword', []),
@@ -84,26 +109,5 @@ class MongoDBPipeline(object):
             logging.log(logging.ERROR,"ERROR(MongodbPipeline): %s"%(str(e),) )   
             traceback.print_exc()
 
-class DuplicatesPipeline(object):
 
-    def __init__(self):
-        self.ids_seen = set()
 
-    def process_item(self, item, spider):
-        if item['tweet_id'] in self.ids_seen:
-            raise DropItem("Duplicate item found: %s" % item)
-        else:
-            self.ids_seen.add(item['tweet_id'])
-            return item
-
-# class DuplicatesPipeline(object):
-
-#     def __init__(self):
-#         self.ids_seen = set()
-
-#     def process_item(self, item, spider):
-#         if item['tweet_id'] in self.ids_seen:
-#             raise DropItem("Duplicate item found: %s" % item)
-#         else:
-#             self.ids_seen.add(item['tweet_id'])
-#             return item
