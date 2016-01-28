@@ -71,6 +71,12 @@ class SearchSpider(scrapy.Spider):
 
         if data is not None and data['items_html'] is not None:
             tweets = self.extract_tweets(data['items_html'])
+            referring_url = response.request.headers.get('Referer', None) or self.start_urls[0]
+            request_url = response.url
+
+            for tweet in tweets:
+                # push parsed item to mongoDB pipline
+                yield self.parse_tweet(tweet,respose)
             # If we have no tweets, then we can break the loop early
             if len(tweets) == 0:
                 Tracer()()
@@ -96,12 +102,7 @@ class SearchSpider(scrapy.Spider):
             # The max tweet is the last tweet in the list
             self.max_tweet = tweets[-1]
 
-            referring_url = response.request.headers.get('Referer', None) or self.start_urls[0]
-            # Tracer()()
-
-            for tweet in tweets:
-                # push parsed item to mongoDB pipline
-                yield self.parse_tweet(tweet,referring_url)
+           
 
             if self.min_tweet['tweet_id'] is not self.max_tweet['tweet_id']:
                 self.max_position = "TWEET-%s-%s-%s" % (
@@ -151,7 +152,7 @@ class SearchSpider(scrapy.Spider):
 
 
 
-    def parse_tweet(self, tweet,referring_url):
+    def parse_tweet(self, tweet,response):
         tweet_item = items.TwitterscraperItem()
         tweet_item['session_id'] = self.session_id
         tweet_item['tweet_id'] = tweet['tweet_id']
@@ -168,7 +169,8 @@ class SearchSpider(scrapy.Spider):
         tweet_item['keyword'] = tweet['keyword']
         tweet_item['query'] = self.query
         # referring_url = response.request.headers.get('Referer', None)
-        tweet_item['referring_url'] = referring_url
+        tweet_item['referring_url'] = response.request.headers.get('Referer', None) or self.start_urls[0]
+        tweet_item['request_url'] = response.url
         # Tracer()()
         return tweet_item
 
