@@ -36,3 +36,13 @@ utc_test.py
 twitterscraper/contrib/downloadmiddleware/rotate_useragent.pyc
 
 twitterscraper/spiders/search.pyc
+
+twitterscraper/contrib/downloadmiddleware/rotate_useragent.pyc
+
+twitterscraper/contrib/downloadmiddleware/rotate_useragent.pyc
+
+*.pyc
+
+*.pyc
+
+twitterscraper/spiders/search.pyc

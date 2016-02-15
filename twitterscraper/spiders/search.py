@@ -34,6 +34,8 @@ class SearchSpider(scrapy.Spider):
     start_urls = []
     min_tweet = None
     max_tweet = None
+    is_first_query = False
+    data_max_position = ""
     settings = get_project_settings()
 
     def __init__(self, domain=None, query="from:TangTotoro"):
@@ -57,18 +59,18 @@ class SearchSpider(scrapy.Spider):
     def parse(self, response):
         # Random string is used to construct the XHR sent to twitter.com
         random_str = "BD1UO2FFu9QAAAAAAAAETAAAAAcAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-
         data = json.loads(response.body_as_unicode())
         #default rate delay is 12s
         # rate_delay = self.settings['DOWNLOAD_DELAY']
-        rate_delay = 6
+        rate_delay = 2
 
         # delay_choices = [(1,30), (2,25), (3,20),(4,15),(5,10)]
         # delay_choices = [(1,50), (2,30), (3,10),(4,8),(5,2)] 
         delay_choices = [(0,1),(1,89), (2,4), (3,3),(4,2),(5,1)]
         # delay_choices = [(1,60), (2,20), (3,10),(4,8),(5,2)]
         # delay_choices = [(0,33),(1,56), (2,5), (3,3),(4,2),(5,1)]
-
+        # if data["max_position"] is not None:
+            
         if data is not None and data['items_html'] is not None:
             tweets = self.extract_tweets(data['items_html'])
             referring_url = response.request.headers.get('Referer', None) or self.start_urls[0]
@@ -76,7 +78,7 @@ class SearchSpider(scrapy.Spider):
 
             for tweet in tweets:
                 # push parsed item to mongoDB pipline
-                yield self.parse_tweet(tweet,respose)
+                yield self.parse_tweet(tweet, response)
             # If we have no tweets, then we can break the loop early
             if len(tweets) == 0:
                 Tracer()()
@@ -85,14 +87,14 @@ class SearchSpider(scrapy.Spider):
                 # Sleep for our rate_delay
                 # time.sleep( random.uniform(0, self.settings['DOWNLOAD_DELAY']))
                 pprint(data)
-                logging.log(logging.DEBUG,data)
-                logging.log(logging.INFO,
-                    "Reach the end of search results( " + self.query + " )")
+                logging.log(logging.DEBUG, data)
+                logging.log(logging.INFO, "Reach the end of search results( " + self.query + " )")
                 return
                 # yield Request(url=next_url, callback=self.parse)
 
             # If we haven't set our min tweet yet, set it now
             if self.min_tweet is None:
+                self.is_first_query = True
                 self.min_tweet = tweets[0]
             elif self.min_tweet is not tweets[0]:
                 self.min_tweet = tweets[0]
@@ -101,15 +103,20 @@ class SearchSpider(scrapy.Spider):
 
             # The max tweet is the last tweet in the list
             self.max_tweet = tweets[-1]
-
-           
-
             if self.min_tweet['tweet_id'] is not self.max_tweet['tweet_id']:
                 self.max_position = "TWEET-%s-%s-%s" % (
                     self.max_tweet['tweet_id'],
                     self.min_tweet['tweet_id'],
                     random_str)
-                #Construct next url to crawl
+                '''
+                    is_first_query is a indicator used to identify the intial query. With the intial query 
+                    the crwaler can simulate the hand-shake request while the delay time is greater than a 
+                    predefined time period, for instance, 22 seconds
+                '''
+                if self.is_first_query:
+                    self.data_max_position = self.max_position
+                    self.is_first_query = False
+                # Construct next url to crawl
                 next_url = self.construct_url(
                     self.query,
                     max_position=self.max_position,
@@ -122,8 +129,14 @@ class SearchSpider(scrapy.Spider):
                     delay_time = random.uniform(rate_delay*(delay_multiple-1), rate_delay*delay_multiple)
                     logging.log(logging.DEBUG,"Sleep for "+ str(delay_time) +" seconds")
                     time.sleep(delay_time)
+                    # if delay_time > 22:
+                    #     next_url = self.construct_url(
+                    #         self.query,
+                    #         max_position=self.data_max_position,
+                    #         operater="min_position")
+                    #     yield Request(url=next_url, callback=self.parse,dont_filter=True)
                 else:
-                    logging.log(logging.DEBUG,"Sleep for "+ 0 +" seconds")
+                    logging.log(logging.DEBUG,"Sleep for 0 seconds")
 
                 print
                 print "Next Request:" + "TWEET-%s-%s" % (
@@ -171,6 +184,11 @@ class SearchSpider(scrapy.Spider):
         # referring_url = response.request.headers.get('Referer', None)
         tweet_item['referring_url'] = response.request.headers.get('Referer', None) or self.start_urls[0]
         tweet_item['request_url'] = response.url
+        tweet_item['quote_tweet_id'] = tweet['quote_tweet_userid']
+        tweet_item['quote_tweet_userid'] = tweet['quote_tweet_userid']
+        tweet_item['quote_tweet_username'] = tweet['quote_tweet_username']
+        tweet_item['quote_tweet_screenname'] = tweet['quote_tweet_screenname']
+        tweet_item['quote_tweet_text'] = tweet['quote_tweet_text']
         # Tracer()()
         return tweet_item
 
@@ -208,9 +226,17 @@ class SearchSpider(scrapy.Spider):
                     # 'image_url': [],
                     'num_retweets': 0,
                     'num_favorites': 0,
-                    'keyword': []
+                    'keyword': [],
+                    'quote_tweet_id' :None,
+                    'quote_tweet_userid' :None,
+                    'quote_tweet_username' :None,
+                    'quote_tweet_screenname' :None,
+                    'quote_tweet_text' :None
                     }
 
+                '''
+                Extract tweet text
+                '''
                 try:
                     text_p = li.find("p", class_="tweet-text")
                     if text_p is not None:
@@ -261,6 +287,23 @@ class SearchSpider(scrapy.Spider):
                     Tracer()()
                     logging.log(logging.DEBUG, "ERROR(extract_text_p): %s"%(str(e),))
                     traceback.print_exc()
+                '''
+                Extract quote tweet content if exists
+                '''
+                try:
+                    quote_tweet = li.find("div", class_="QuoteTweet-innerContainer")
+                    if quote_tweet is not None:
+                        # Tracer()()
+                        tweet['quote_tweet_id'] = quote_tweet['data-item-id']
+                        tweet['quote_tweet_userid'] = quote_tweet['data-user-id']
+                        tweet['quote_tweet_screenname'] = quote_tweet['data-screen-name']
+                        tweet['quote_tweet_username'] = quote_tweet.find("b",class_="QuoteTweet-fullname").get_text()
+                        tweet['quote_tweet_text'] = quote_tweet.find("div",class_="QuoteTweet-text").get_text()
+                except Exception, e:
+                    Tracer()()
+                    logging.log(logging.DEBUG, "ERROR(extract_quote_tweet): %s"%(str(e),))
+                    traceback.print_exc()
+
                 # Tweet isRetweet
                 # is_retweet = li.find('js-retweet-text').length is not 0
 
@@ -344,7 +387,7 @@ class SearchSpider(scrapy.Spider):
         params = {
             'vertical': 'default',
             # Query Param
-            'q': query+ ' '+'lang:en'+' '+ 'since:2006-03-21 until:2016-01-27', #melatonin 2015-04-09 return only one tweet
+            'q': query+ ' '+'lang:en'+' '+ 'since:2006-03-21 until:2016-02-01', #melatonin 2015-04-09 return only one tweet
             # Type Param
             'src': 'typd'
         }

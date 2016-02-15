@@ -47,7 +47,7 @@ INDEX = {
                     },
                 'user_screen_name': {'name': 'user_screen_name'},
                 'tweet_id': {'name': 'tweet_id'},
-                'created_at': {'name': 'created_at'},
+                'created_at_ts': {'name': 'created_at_ts'},
                 }
         }
 
