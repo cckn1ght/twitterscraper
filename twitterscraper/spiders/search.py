@@ -71,79 +71,76 @@ class SearchSpider(scrapy.Spider):
         # delay_choices = [(0,33),(1,56), (2,5), (3,3),(4,2),(5,1)]
         # if data["max_position"] is not None:
             
-        if data is not None and data['items_html'] is not None:
-            tweets = self.extract_tweets(data['items_html'])
-            referring_url = response.request.headers.get('Referer', None) or self.start_urls[0]
-            request_url = response.url
+        try:
+            if data['items_html'] is not None:
+                tweets = self.extract_tweets(data['items_html'])
 
-            for tweet in tweets:
-                # push parsed item to mongoDB pipline
-                yield self.parse_tweet(tweet, response)
-            # If we have no tweets, then we can break the loop early
-            if len(tweets) == 0:
-                Tracer()()
-                # self.max_position = "TWEET-%s-%s-%s" % (self.max_tweet['tweet_id'], self.min_tweet['tweet_id'],random_str)
-                # next_url = self.construct_url(self.query, max_position=self.max_position,operater="min_position")
-                # Sleep for our rate_delay
-                # time.sleep( random.uniform(0, self.settings['DOWNLOAD_DELAY']))
-                pprint(data)
-                logging.log(logging.DEBUG, data)
-                logging.log(logging.INFO, "Reach the end of search results( " + self.query + " )")
-                return
-                # yield Request(url=next_url, callback=self.parse)
+                for tweet in tweets:
+                    # push parsed item to mongoDB pipline
+                    yield self.parse_tweet(tweet, response)
+                # If we have no tweets, then we can break the loop early
+                if len(tweets) == 0:
+                    Tracer()()
+                    pprint(data)
+                    logging.log(logging.DEBUG, data)
+                    logging.log(logging.INFO, "Reach the end of search results( " + self.query + " )")
+                    return
+                    # yield Request(url=next_url, callback=self.parse)
 
-            # If we haven't set our min tweet yet, set it now
-            if self.min_tweet is None:
-                self.is_first_query = True
-                self.min_tweet = tweets[0]
-            elif self.min_tweet is not tweets[0]:
-                self.min_tweet = tweets[0]
+                # If we haven't set our min tweet yet, set it now
+                if self.min_tweet is None:
+                    self.is_first_query = True
+                    self.min_tweet = tweets[0]
+                elif self.min_tweet is not tweets[0]:
+                    self.min_tweet = tweets[0]
 
-            # continue_search = self.save_tweets(tweets)
+                # continue_search = self.save_tweets(tweets)
 
-            # The max tweet is the last tweet in the list
-            self.max_tweet = tweets[-1]
-            if self.min_tweet['tweet_id'] is not self.max_tweet['tweet_id']:
-                self.max_position = "TWEET-%s-%s-%s" % (
-                    self.max_tweet['tweet_id'],
-                    self.min_tweet['tweet_id'],
-                    random_str)
-                '''
-                    is_first_query is a indicator used to identify the intial query. With the intial query 
-                    the crwaler can simulate the hand-shake request while the delay time is greater than a 
-                    predefined time period, for instance, 22 seconds
-                '''
-                if self.is_first_query:
-                    self.data_max_position = self.max_position
-                    self.is_first_query = False
-                # Construct next url to crawl
-                next_url = self.construct_url(
-                    self.query,
-                    max_position=self.max_position,
-                    operater="max_position")
+                # The max tweet is the last tweet in the list
+                self.max_tweet = tweets[-1]
+                if self.min_tweet['tweet_id'] is not self.max_tweet['tweet_id']:
+                    self.max_position = "TWEET-%s-%s-%s" % (
+                        self.max_tweet['tweet_id'],
+                        self.min_tweet['tweet_id'],
+                        random_str)
+                    # '''
+                    #     is_first_query is a indicator used to identify the intial query. With the intial query 
+                    #     the crwaler can simulate the hand-shake request while the delay time is greater than a 
+                    #     predefined time period, for instance, 22 seconds
+                    # '''
+                    # if self.is_first_query:
+                    #     self.data_max_position = self.max_position
+                    #     self.is_first_query = False
+                    # Construct next url to crawl
+                    next_url = self.construct_url(
+                        self.query,
+                        max_position=self.max_position,
+                        operater="max_position")
 
-                # Sleep for rate_delay
-                # Tracer()()
-                delay_multiple = self.weighted_choice(delay_choices)
-                if delay_multiple is not 0:
-                    delay_time = random.uniform(rate_delay*(delay_multiple-1), rate_delay*delay_multiple)
-                    logging.log(logging.DEBUG,"Sleep for "+ str(delay_time) +" seconds")
-                    time.sleep(delay_time)
-                    # if delay_time > 22:
-                    #     next_url = self.construct_url(
-                    #         self.query,
-                    #         max_position=self.data_max_position,
-                    #         operater="min_position")
-                    #     yield Request(url=next_url, callback=self.parse,dont_filter=True)
-                else:
-                    logging.log(logging.DEBUG,"Sleep for 0 seconds")
+                    # Sleep for rate_delay
+                    # Tracer()()
+                    delay_multiple = self.weighted_choice(delay_choices)
+                    if delay_multiple is not 0:
+                        delay_time = random.uniform(rate_delay*(delay_multiple-1), rate_delay*delay_multiple)
+                        logging.log(logging.DEBUG,"Sleep for "+ str(delay_time) +" seconds")
+                        time.sleep(delay_time)
+                        # if delay_time > 22:
+                        #     next_url = self.construct_url(
+                        #         self.query,
+                        #         max_position=self.data_max_position,
+                        #         operater="min_position")
+                        #     yield Request(url=next_url, callback=self.parse,dont_filter=True)
+                    else:
+                        logging.log(logging.DEBUG,"Sleep for 0 seconds")
 
-                print
-                print "Next Request:" + "TWEET-%s-%s" % (
-                    self.max_tweet['tweet_id'], self.min_tweet['tweet_id'])
-                print
-                # Tracer()()
-                yield Request(url=next_url, callback=self.parse,dont_filter=True)
+                    print
+                    print "Next Request:" + "TWEET-%s-%s" % (
+                        self.max_tweet['tweet_id'], self.min_tweet['tweet_id'])
+                    print
+                    # Tracer()()
+                    yield Request(url=next_url, callback=self.parse,dont_filter=True)
+        except Exception, e:
+            pass
 
     def weighted_choice(self, choices):
         """
@@ -266,19 +263,20 @@ class SearchSpider(scrapy.Spider):
 
                         # If there is any user mention containing the query, then pass the tweet.
                         # Tracer()()
-                        user_mentions = twitter_username_re.match(tweet['text'])
-                        if user_mentions and any([self.query.lower() in user_mention.lower() for user_mention in user_mentions.groups()]):
-                            # Tracer()()
-                            logging.log(logging.DEBUG, 'Found '+self.query+' in '+ str(user_mentions.groups())+': Drop tweet '+tweet['tweet_id'])
-                            continue
-                        # If the keyword was found in the text and was the same with query, then accept the tweet 
-                        if text_p.find("strong") and text_p.find("strong").get_text().lower() == self.query.lower():
-                            tweet['keyword'] = text_p.find("strong").get_text()
-                        else:
-                            # The keyword is not in the text, then pass the tweet.
-                            # Tracer()()
-                            logging.log(logging.DEBUG, 'No '+self.query+' in the content of tweet'+': Drop tweet '+tweet['tweet_id'])
-                            continue                   
+                        if self.query.find("from:") == -1:
+                            user_mentions = twitter_username_re.match(tweet['text'])
+                            if user_mentions and any([self.query.lower() in user_mention.lower() for user_mention in user_mentions.groups()]):
+                                # Tracer()()
+                                logging.log(logging.DEBUG, 'Found '+self.query+' in '+ str(user_mentions.groups())+': Drop tweet '+tweet['tweet_id'])
+                                continue
+                            # If the keyword was found in the text and was the same with query, then accept the tweet 
+                            if text_p.find("strong") and text_p.find("strong").get_text().lower() == self.query.lower():
+                                tweet['keyword'] = text_p.find("strong").get_text()
+                            else:
+                                # The keyword is not in the text, then pass the tweet.
+                                # Tracer()()
+                                logging.log(logging.DEBUG, 'No '+self.query+' in the content of tweet'+': Drop tweet '+tweet['tweet_id'])
+                                continue                   
                     else:
                         # Tracer()()
                         logging.log(logging.DEBUG, 'No content in the tweet'+': Drop tweet '+tweet['tweet_id'])
@@ -328,18 +326,6 @@ class SearchSpider(scrapy.Spider):
                             Tracer()()
                             logging.log(logging.DEBUG, "ERROR(extract _timestamp): %s"%(str(e),)) 
                             traceback.print_exc()
-                    # convo_a_tag = li.find("div",class_="stream-item-footer").find_next("a",class_="js-details")
-                    # if convo_a_tag is not None:
-                    #   print
-                    #   print "convo_a_tag:"+ str(convo_a_tag['href'])
-                    #   print
-                    # tweet['convo_url'] = str(convo_a_tag)
-
-                    # Tweet image url
-                    # img_url_divs = li.select("div.js-old-photo")
-                    # if len(img_url_divs) > 0:
-                    #     for img_url_div in img_url_divs:
-                    #         tweet['image_url'].append(img_url_div['data-image-url'])
 
                     # Tweet Retweets
                     retweet_span = li.select(
@@ -387,7 +373,7 @@ class SearchSpider(scrapy.Spider):
         params = {
             'vertical': 'default',
             # Query Param
-            'q': query+ ' '+'lang:en'+' '+ 'since:2006-03-21 until:2016-02-01', #melatonin 2015-04-09 return only one tweet
+            'q': query+ ' '+'lang:en', #melatonin 2015-04-09 return only one tweet
             # Type Param
             'src': 'typd'
         }
