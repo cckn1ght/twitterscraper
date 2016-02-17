@@ -373,9 +373,10 @@ class SearchSpider(scrapy.Spider):
         params = {
             'vertical': 'default',
             # Query Param
-            'q': query+ ' '+'lang:en', #melatonin 2015-04-09 return only one tweet
+            'q': query+ ' '+'lang:en'+' '+'since:2014-01-01 until:2014-06-12', #melatonin 2015-04-09 return only one tweet
             # Type Param
-            'src': 'typd'
+            'src': 'typd',
+            'f':'tweets'
         }
 
         #todo develop a query operator recognize function
