@@ -51,16 +51,6 @@ class SearchSpider(scrapy.Spider):
         """
         self.query = query
         self.query_keyword = query.split(',')[0]
-        if self.query_keyword is "st. john's wort":
-            self.custom_settings= {'MONGODB_COLLECTION': 'st_johns_wort'}     
-        elif self.query_keyword is "echinacea":
-            self.custom_settings= {'MONGODB_COLLECTION': 'echinacea'}
-        elif self.query_keyword is "valerian":
-            self.custom_settings= {'MONGODB_COLLECTION': 'valerian'}
-        elif self.query_keyword is "melatonin":
-            self.custom_settings= {'MONGODB_COLLECTION': 'melatonin'}
-        
-        Tracer()()
 
         self.session_id = session_id.strftime('%Y-%m-%d')
         # Tracer()()
@@ -68,32 +58,17 @@ class SearchSpider(scrapy.Spider):
         # Tracer()()
         self.start_urls.append(url)
 
-        # self.set_crawler(self.crawler)
-
-    # def set_crawler(self, crawler):
-    #     super(SearchSpider, self).set_crawler(crawler)
-    #     if self.query_keyword is "st. john's wort":
-    #         crawler.settings.set('MONGODB_COLLECTION','st_johns_wort')
-    #     elif self.query_keyword is "echinacea":
-    #         crawler.settings.set('MONGODB_COLLECTION','echinacea')
-    #     elif self.query_keyword is "valerian":
-    #         crawler.settings.set('MONGODB_COLLECTION','valerian')
-    #     elif self.query_keyword is "melatonin":
-    #         crawler.settings.set('MONGODB_COLLECTION','melatonin')
-    #     else:
-    #         crawler.settings.set('MONGODB_COLLECTION','tweet_detail_test')
-
     def parse(self, response):
         # Random string is used to construct the XHR sent to twitter.com
         random_str = "BD1UO2FFu9QAAAAAAAAETAAAAAcAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
         data = json.loads(response.body_as_unicode())
         #default rate delay is 12s
         # rate_delay = self.settings['DOWNLOAD_DELAY']
-        rate_delay = 2
+        # rate_delay = 2
 
         # delay_choices = [(1,30), (2,25), (3,20),(4,15),(5,10)]
         # delay_choices = [(1,50), (2,30), (3,10),(4,8),(5,2)] 
-        delay_choices = [(0,1),(1,89), (2,4), (3,3),(4,2),(5,1)]
+        # delay_choices = [(0,1),(1,89), (2,4), (3,3),(4,2),(5,1)]
         # delay_choices = [(1,60), (2,20), (3,10),(4,8),(5,2)]
         # delay_choices = [(0,33),(1,56), (2,5), (3,3),(4,2),(5,1)]
         # if data["max_position"] is not None:
@@ -148,26 +123,26 @@ class SearchSpider(scrapy.Spider):
 
                     # Sleep for rate_delay
                     # Tracer()()
-                    delay_multiple = self.weighted_choice(delay_choices)
-                    if delay_multiple is not 0:
-                        delay_time = random.uniform(rate_delay*(delay_multiple-1), rate_delay*delay_multiple)
-                        logging.log(logging.DEBUG,"Sleep for "+ str(delay_time) +" seconds")
-                        time.sleep(delay_time)
-                        # if delay_time > 22:
-                        #     next_url = self.construct_url(
-                        #         self.query,
-                        #         max_position=self.data_max_position,
-                        #         operater="min_position")
-                        #     yield Request(url=next_url, callback=self.parse,dont_filter=True)
-                    else:
-                        logging.log(logging.DEBUG,"Sleep for 0 seconds")
+                    # delay_multiple = self.weighted_choice(delay_choices)
+                    # if delay_multiple is not 0:
+                    #     delay_time = random.uniform(rate_delay*(delay_multiple-1), rate_delay*delay_multiple)
+                    #     logging.log(logging.DEBUG,"Sleep for "+ str(delay_time) +" seconds")
+                    #     time.sleep(delay_time)
+                    #     # if delay_time > 22:
+                    #     #     next_url = self.construct_url(
+                    #     #         self.query,
+                    #     #         max_position=self.data_max_position,
+                    #     #         operater="min_position")
+                    #     #     yield Request(url=next_url, callback=self.parse,dont_filter=True)
+                    # else:
+                    #     logging.log(logging.DEBUG,"Sleep for 0 seconds")
 
                     print
                     print "Next Request:" + "TWEET-%s-%s" % (
                         self.max_tweet['tweet_id'], self.min_tweet['tweet_id'])
                     print
                     # Tracer()()
-                    yield Request(url=next_url, callback=self.parse,dont_filter=True)
+                    yield Request(url=next_url, callback=self.parse, dont_filter=True)
         except Exception, e:
             pass
 

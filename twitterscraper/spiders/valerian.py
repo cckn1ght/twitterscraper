@@ -38,6 +38,8 @@ class SearchSpider(scrapy.Spider):
     min_tweet = None
     max_tweet = None
     is_first_query = False
+    # @todo: develop an algorithm to find the very last tweet
+    very_last_tweet_id = "25283831"
     data_max_position = ""
     settings = get_project_settings()
 
@@ -53,7 +55,11 @@ class SearchSpider(scrapy.Spider):
                         advanced search: https://twitter.com/search-advanced
         """
         self.query = query
-        self.query_keyword = query.split(',')[0]
+        query_token = query.split(',')
+        self.query_keyword = query_token[0]
+        self.query_lang = query_token[1]
+        self.query_since = query_token[2]
+        self.query_until = query_token[3]
         # if self.query_keyword is "st. john's wort":
         #     self.custom_settings= {'MONGODB_COLLECTION': 'st_johns_wort'}     
         # elif self.query_keyword is "echinacea":
@@ -92,11 +98,11 @@ class SearchSpider(scrapy.Spider):
         data = json.loads(response.body_as_unicode())
         #default rate delay is 12s
         # rate_delay = self.settings['DOWNLOAD_DELAY']
-        rate_delay = 2
+        # rate_delay = 2
 
         # delay_choices = [(1,30), (2,25), (3,20),(4,15),(5,10)]
         # delay_choices = [(1,50), (2,30), (3,10),(4,8),(5,2)] 
-        delay_choices = [(0,1),(1,89), (2,4), (3,3),(4,2),(5,1)]
+        # delay_choices = [(0,1),(1,89), (2,4), (3,3),(4,2),(5,1)]
         # delay_choices = [(1,60), (2,20), (3,10),(4,8),(5,2)]
         # delay_choices = [(0,33),(1,56), (2,5), (3,3),(4,2),(5,1)]
         # if data["max_position"] is not None:
@@ -105,14 +111,21 @@ class SearchSpider(scrapy.Spider):
             if data['items_html'] is not None:
                 tweets = self.extract_tweets(data['items_html'])
 
-                
                 # If we have no tweets, then we can break the loop early
                 if len(tweets) == 0 and data['has_more_items'] is False:
-                    Tracer()()
-                    pprint(data)
-                    logging.log(logging.DEBUG, data)
-                    logging.log(logging.INFO, "Reach the end of search results( " + self.query + " )")
-                    return
+                    # Tracer()()
+                    if self.isEnd():
+                        pprint(data)
+                        logging.log(logging.DEBUG, data)
+                        logging.log(logging.INFO, "Reach the end of search results( " + self.query + " )")
+                        return
+                    else:
+                        time.sleep(10)
+                        Tracer()()
+                        self.query_until = self.query_until.split(':')[0] + self.max_tweet['created_at_iso'].strftime('%Y-%m-%d')
+                        self.query = ','.join(self.query_keyword,self.query_lang,self.query_since,self.query_until)
+                        new_url = self.construct_url(self.query)
+                        yield Request(url=new_url, callback=self.parse,dont_filter=True)
                     # yield Request(url=next_url, callback=self.parse)
 
                 for tweet in tweets:
@@ -151,19 +164,19 @@ class SearchSpider(scrapy.Spider):
 
                     # Sleep for rate_delay
                     # Tracer()()
-                    delay_multiple = self.weighted_choice(delay_choices)
-                    if delay_multiple is not 0:
-                        delay_time = random.uniform(rate_delay*(delay_multiple-1), rate_delay*delay_multiple)
-                        logging.log(logging.DEBUG,"Sleep for "+ str(delay_time) +" seconds")
-                        time.sleep(delay_time)
-                        # if delay_time > 22:
-                        #     next_url = self.construct_url(
-                        #         self.query,
-                        #         max_position=self.data_max_position,
-                        #         operater="min_position")
-                        #     yield Request(url=next_url, callback=self.parse,dont_filter=True)
-                    else:
-                        logging.log(logging.DEBUG,"Sleep for 0 seconds")
+                    # delay_multiple = self.weighted_choice(delay_choices)
+                    # if delay_multiple is not 0:
+                    #     delay_time = random.uniform(rate_delay*(delay_multiple-1), rate_delay*delay_multiple)
+                    #     logging.log(logging.DEBUG,"Sleep for "+ str(delay_time) +" seconds")
+                    #     time.sleep(delay_time)
+                    #     # if delay_time > 22:
+                    #     #     next_url = self.construct_url(
+                    #     #         self.query,
+                    #     #         max_position=self.data_max_position,
+                    #     #         operater="min_position")
+                    #     #     yield Request(url=next_url, callback=self.parse,dont_filter=True)
+                    # else:
+                    #     logging.log(logging.DEBUG,"Sleep for 0 seconds")
 
                     print
                     print "Next Request:" + "TWEET-%s-%s" % (
@@ -173,6 +186,12 @@ class SearchSpider(scrapy.Spider):
                     yield Request(url=next_url, callback=self.parse,dont_filter=True)
         except Exception, e:
             pass
+
+    def isEnd(self):
+        if self.max_tweet['tweet_id'] is self.very_last_tweet_id:
+            return True
+        else:
+            return False
 
     def weighted_choice(self, choices):
         """
@@ -327,7 +346,7 @@ class SearchSpider(scrapy.Spider):
                         logging.log(logging.DEBUG, 'No content in the tweet'+': Drop tweet '+tweet['tweet_id'])
                         continue
                 except Exception, e:
-                    Tracer()()
+                    # Tracer()()
                     logging.log(logging.DEBUG, "ERROR(extract_text_p): %s"%(str(e),))
                     traceback.print_exc()
                 '''

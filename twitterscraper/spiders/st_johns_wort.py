@@ -90,11 +90,11 @@ class SearchSpider(scrapy.Spider):
         data = json.loads(response.body_as_unicode())
         #default rate delay is 12s
         # rate_delay = self.settings['DOWNLOAD_DELAY']
-        rate_delay = 2
+        # rate_delay = 2
 
         # delay_choices = [(1,30), (2,25), (3,20),(4,15),(5,10)]
         # delay_choices = [(1,50), (2,30), (3,10),(4,8),(5,2)] 
-        delay_choices = [(0,1),(1,89), (2,4), (3,3),(4,2),(5,1)]
+        # delay_choices = [(0,1),(1,89), (2,4), (3,3),(4,2),(5,1)]
         # delay_choices = [(1,60), (2,20), (3,10),(4,8),(5,2)]
         # delay_choices = [(0,33),(1,56), (2,5), (3,3),(4,2),(5,1)]
         # if data["max_position"] is not None:
@@ -106,7 +106,7 @@ class SearchSpider(scrapy.Spider):
                 
                 # If we have no tweets, then we can break the loop early
                 if len(tweets) == 0 and data['has_more_items'] is False:
-                    Tracer()()
+                    # Tracer()()
                     pprint(data)
                     logging.log(logging.DEBUG, data)
                     logging.log(logging.INFO, "Reach the end of search results( " + self.query + " )")
@@ -149,19 +149,19 @@ class SearchSpider(scrapy.Spider):
 
                     # Sleep for rate_delay
                     # Tracer()()
-                    delay_multiple = self.weighted_choice(delay_choices)
-                    if delay_multiple is not 0:
-                        delay_time = random.uniform(rate_delay*(delay_multiple-1), rate_delay*delay_multiple)
-                        logging.log(logging.DEBUG,"Sleep for "+ str(delay_time) +" seconds")
-                        time.sleep(delay_time)
-                        # if delay_time > 22:
-                        #     next_url = self.construct_url(
-                        #         self.query,
-                        #         max_position=self.data_max_position,
-                        #         operater="min_position")
-                        #     yield Request(url=next_url, callback=self.parse,dont_filter=True)
-                    else:
-                        logging.log(logging.DEBUG,"Sleep for 0 seconds")
+                    # delay_multiple = self.weighted_choice(delay_choices)
+                    # if delay_multiple is not 0:
+                    #     delay_time = random.uniform(rate_delay*(delay_multiple-1), rate_delay*delay_multiple)
+                    #     logging.log(logging.DEBUG,"Sleep for "+ str(delay_time) +" seconds")
+                    #     time.sleep(delay_time)
+                    #     # if delay_time > 22:
+                    #     #     next_url = self.construct_url(
+                    #     #         self.query,
+                    #     #         max_position=self.data_max_position,
+                    #     #         operater="min_position")
+                    #     #     yield Request(url=next_url, callback=self.parse,dont_filter=True)
+                    # else:
+                    #     logging.log(logging.DEBUG,"Sleep for 0 seconds")
 
                     print
                     print "Next Request:" + "TWEET-%s-%s" % (

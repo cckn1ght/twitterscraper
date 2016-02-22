@@ -21,7 +21,9 @@
 import re
 import random
 import base64
-from scrapy import log
+import logging
+
+logger = logging.getLogger('scrapy')
 
 from IPython.core.debugger import Tracer
 
@@ -29,18 +31,24 @@ class RandomProxy(object):
     def __init__(self, settings):
         # Tracer()()
         self.proxy_list = settings.get('PROXY_LIST')
-        fin = open(self.proxy_list)
+
+        try:
+            fin = open(self.proxy_list)
+            
+        except Exception, e:
+            traceback.print_exc()
 
         self.proxies = {}
-        if len(fin.readlines()) == 0:
-            Tracer()()
+        data = fin.readlines()
+        if len(data) == 0:
+            # Tracer()()
             log.msg('The proxy_list is empty')
             return
-        for line in fin.readlines():
+        for line in data:
             parts = re.match('(\w+://)(\w+:\w+@)?(.+)', line)
 
             if parts is None:
-                Tracer()()
+                # Tracer()()
                 log.msg('Did not read the line')
                 return
 
@@ -64,19 +72,27 @@ class RandomProxy(object):
         if 'proxy' in request.meta:
             return
 
-        proxy_address = random.choice(self.proxies.keys())
-        proxy_user_pass = self.proxies[proxy_address]
+        if len(self.proxies) == 0:
+            raise ValueError('All proxies are unusable, cannot proceed')
 
-        request.meta['proxy'] = proxy_address
-        if proxy_user_pass:
-            basic_auth = 'Basic ' + base64.encodestring(proxy_user_pass)
-            request.headers['Proxy-Authorization'] = basic_auth
+        if random.choice(xrange(1,100)) <= 15:
+            proxy_address = random.choice(self.proxies.keys())
+            proxy_user_pass = self.proxies[proxy_address]
+
+            request.meta['proxy'] = proxy_address
+
+            print 'Changing to proxy <' + proxy_address + '>, ' + str(len(self.proxies))+ ' proxies left'
+            # logger.info('Changing to proxy <%s>, %d proxies left' % (proxy_address, len(self.proxies)))
+
+            if proxy_user_pass:
+                basic_auth = 'Basic ' + base64.encodestring(proxy_user_pass)
+                request.headers['Proxy-Authorization'] = basic_auth
 
     def process_exception(self, request, exception, spider):
         proxy = request.meta['proxy']
-        log.msg('Removing failed proxy <%s>, %d proxies left' % (
-                    proxy, len(self.proxies)))
+       
         try:
             del self.proxies[proxy]
-        except ValueError:
-            pass
+        except KeyError:
+            pass                    
+        print 'Removing failed proxy <' + proxy_address + '>, ' + str(len(self.proxies)) + ' proxies left'

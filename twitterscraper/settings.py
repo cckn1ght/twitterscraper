@@ -78,7 +78,7 @@ AUTOTHROTTLE_START_DELAY=20.0
 # The maximum download delay to be set in case of high latencies
 AUTOTHROTTLE_MAX_DELAY=60.0
 # Enable showing throttling stats for every response received:
-AUTOTHROTTLE_DEBUG=True
+# AUTOTHROTTLE_DEBUG=True
 # AUTOTHROTTLE_CONCURRENCY_CHECK_PERIOD = 10#How many responses should pass to perform concurrency adjustments.
 
 # Enable and configure HTTP caching (disabled by default)
@@ -98,7 +98,7 @@ AUTOTHROTTLE_DEBUG=True
 
 
 # Retry many times since proxies often fail
-RETRY_TIMES = 20
+RETRY_TIMES = 10
 # Retry on most error codes since proxies fail for different reasons
 RETRY_HTTP_CODES = [500, 503, 504, 400, 403, 404, 408]
 
@@ -108,9 +108,11 @@ DOWNLOADER_MIDDLEWARES = {
     'twitterscraper.contrib.downloadmiddleware.rotate_useragent.RotateUserAgentMiddleware':400,
     'scrapy.downloadermiddlewares.retry.RetryMiddleware': 90,
     # Fix path to this module
-    # 'twitterscraper.contrib.downloadmiddleware.randomproxy.RandomProxy': 100,
-    # 'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 110,
+    'twitterscraper.contrib.downloadmiddleware.randomproxy.RandomProxy': 100,
+    'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 110,
 }
+DOWNLOAD_TIMEOUT = 5
+
 
 # DOWNLOADER_MIDDLEWARES = {
     # 'twitterscraper.contrib.downloadmiddleware.google_cache.GoogleCacheMiddleware':50,

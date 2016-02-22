@@ -84,7 +84,7 @@ class SearchSpider(scrapy.Spider):
                 
                 # If we have no tweets, then we can break the loop early
                 if len(tweets) == 0 and data['has_more_items'] is False:
-                    Tracer()()
+                    # Tracer()()
                     pprint(data)
                     logging.log(logging.DEBUG, data)
                     logging.log(logging.INFO, "Reach the end of search results( " + self.query + " )")
