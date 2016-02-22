@@ -39,7 +39,7 @@ DATABASE_HOST = "localhost"
 DATABASE_PORT = 27017
 INDEX = {
             # collection
-            'tweet_detail':
+            'st_johns_wort':
             {
                 (('user_screen_name', ASCENDING), ('tweet_id', DESCENDING)):
                     {
@@ -51,9 +51,9 @@ INDEX = {
                 }
         }
 
-def drop_database(name_or_database):
-    if name_or_database and client:
-        client.drop_database(name_or_database)
+# def drop_database(name_or_database):
+#     if name_or_database and client:
+#         client.drop_database(name_or_database)
 
 def create_index():
     """
@@ -65,5 +65,5 @@ def create_index():
 
 if __name__ == "__main__":
     client = MongoClient(DATABASE_HOST,DATABASE_PORT) 
-    drop_database(DATABASE_NAME)
+    # drop_database(DATABASE_NAME)
     create_index() 

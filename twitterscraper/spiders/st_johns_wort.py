@@ -29,7 +29,10 @@ from IPython.core.debugger import Tracer
 
 
 class SearchSpider(scrapy.Spider):
-    name = "search"
+    name = "st_johns_wort"
+    custom_settings= {'MONGODB_COLLECTION': 'st_johns_wort'
+                      # 'LOG_FILE':'logs/st_johns_wort/scrapy.log'
+    }
     allowed_domains = ["twitter.com"]
     start_urls = []
     min_tweet = None
@@ -51,24 +54,22 @@ class SearchSpider(scrapy.Spider):
         """
         self.query = query
         self.query_keyword = query.split(',')[0]
-        if self.query_keyword is "st. john's wort":
-            self.custom_settings= {'MONGODB_COLLECTION': 'st_johns_wort'}     
-        elif self.query_keyword is "echinacea":
-            self.custom_settings= {'MONGODB_COLLECTION': 'echinacea'}
-        elif self.query_keyword is "valerian":
-            self.custom_settings= {'MONGODB_COLLECTION': 'valerian'}
-        elif self.query_keyword is "melatonin":
-            self.custom_settings= {'MONGODB_COLLECTION': 'melatonin'}
-        
-        Tracer()()
-
+        # if self.query_keyword is "st. john's wort":
+        #     self.custom_settings= {'MONGODB_COLLECTION': 'st_johns_wort'}
+        # elif self.query_keyword is "echinacea":
+        #     self.custom_settings= {'MONGODB_COLLECTION': 'echinacea'}
+        # elif self.query_keyword is "valerian":
+        #     self.custom_settings= {'MONGODB_COLLECTION': 'valerian'}
+        # elif self.query_keyword is "melatonin":
+        #     self.custom_settings= {'MONGODB_COLLECTION': 'melatonin'}    
+        # Tracer()()
         self.session_id = session_id.strftime('%Y-%m-%d')
         # Tracer()()
         url = self.construct_url(self.query)
         # Tracer()()
         self.start_urls.append(url)
 
-        # self.set_crawler(self.crawler)
+    #     self.custom_settings
 
     # def set_crawler(self, crawler):
     #     super(SearchSpider, self).set_crawler(crawler)

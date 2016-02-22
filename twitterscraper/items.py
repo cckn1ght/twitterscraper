@@ -34,3 +34,4 @@ class TwitterscraperItem(scrapy.Item):
     quote_tweet_username = Field()
     quote_tweet_screenname = Field()
     quote_tweet_text = Field()
+    html = Field()

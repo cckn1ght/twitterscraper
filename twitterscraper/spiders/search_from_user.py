@@ -28,8 +28,8 @@ from scrapy.utils.project import get_project_settings
 from IPython.core.debugger import Tracer
 
 
-class SearchSpider(scrapy.Spider):
-    name = "search"
+class SearchFromUserSpider(scrapy.Spider):
+    name = "searchFromUser"
     allowed_domains = ["twitter.com"]
     start_urls = []
     min_tweet = None
@@ -41,47 +41,20 @@ class SearchSpider(scrapy.Spider):
     def __init__(self, domain=None, query="from:TangTotoro"):
         # super(SearchSpider, self).__init__(*args, **kwargs)
         # query = kwargs.get('query')
-        session_id = datetime.datetime.utcnow().date()
-        
+        session_id = datetime.datetime.utcnow().date()     
         """
         Scrape items from twitter
         :param query:   Query to search Twitter with. Takes form of queries
         constructed with using Twitters
-                        advanced search: https://twitter.com/search-advanced
+                        advanced  search: https://twitter.com/search-advanced
         """
         self.query = query
         self.query_keyword = query.split(',')[0]
-        if self.query_keyword is "st. john's wort":
-            self.custom_settings= {'MONGODB_COLLECTION': 'st_johns_wort'}     
-        elif self.query_keyword is "echinacea":
-            self.custom_settings= {'MONGODB_COLLECTION': 'echinacea'}
-        elif self.query_keyword is "valerian":
-            self.custom_settings= {'MONGODB_COLLECTION': 'valerian'}
-        elif self.query_keyword is "melatonin":
-            self.custom_settings= {'MONGODB_COLLECTION': 'melatonin'}
-        
-        Tracer()()
-
         self.session_id = session_id.strftime('%Y-%m-%d')
         # Tracer()()
         url = self.construct_url(self.query)
         # Tracer()()
         self.start_urls.append(url)
-
-        # self.set_crawler(self.crawler)
-
-    # def set_crawler(self, crawler):
-    #     super(SearchSpider, self).set_crawler(crawler)
-    #     if self.query_keyword is "st. john's wort":
-    #         crawler.settings.set('MONGODB_COLLECTION','st_johns_wort')
-    #     elif self.query_keyword is "echinacea":
-    #         crawler.settings.set('MONGODB_COLLECTION','echinacea')
-    #     elif self.query_keyword is "valerian":
-    #         crawler.settings.set('MONGODB_COLLECTION','valerian')
-    #     elif self.query_keyword is "melatonin":
-    #         crawler.settings.set('MONGODB_COLLECTION','melatonin')
-    #     else:
-    #         crawler.settings.set('MONGODB_COLLECTION','tweet_detail_test')
 
     def parse(self, response):
         # Random string is used to construct the XHR sent to twitter.com
@@ -96,7 +69,6 @@ class SearchSpider(scrapy.Spider):
         delay_choices = [(0,1),(1,89), (2,4), (3,3),(4,2),(5,1)]
         # delay_choices = [(1,60), (2,20), (3,10),(4,8),(5,2)]
         # delay_choices = [(0,33),(1,56), (2,5), (3,3),(4,2),(5,1)]
-        # if data["max_position"] is not None:
             
         try:
             if data['items_html'] is not None:
@@ -277,48 +249,7 @@ class SearchSpider(scrapy.Spider):
                 try:
                     text_p = li.find("p", class_="tweet-text")
                     if text_p is not None:
-                        # Replace each emoji with its unicode value
-                        # textElement.find('img.twitter-emoji').each((i, emoji) ->
-                        #   $(emoji).html $(emoji).attr('alt')
-                        # )
-                        # Tacer()()
-                        # pint
-                        # [rint(text_p)
-                        # emoji_dict = [
-                        #     emoji for emoji in text_p.find_all(
-                        #         "img", class_="twitter-emoji"
-                        #     )
-                        # ]
-                        # def replace_all(text, dic):
-                        #   for i, j in dic.iteritems():
-                        #       text = text.replace(i, j)
-                        #       return text
-                        # len(emoji_dict) is not 0:
-                        # for emoji in emoji_dict:
-                        #     Tracer()()
-                            # text_p = text_p.replace(
-                            #     str(emoji), emoji['alt'].decode('ascii')
-                            #     )
-                        tweet['text'] = text_p.get_text()               
-
-                        # If there is any user mention containing the query, then pass the tweet.
-                        # Tracer()()
-                        # if self.query.find("from:") == -1:
-                        user_mentions = twitter_username_re.match(tweet['text'])
-                        if user_mentions and any([self.query_keyword.lower() in user_mention.lower() for user_mention in user_mentions.groups()]):
-                            # Tracer()()
-                            logging.log(logging.DEBUG, 'Found '+self.query_keyword+' in '+ str(user_mentions.groups())+': Drop tweet '+tweet['tweet_id'])
-                            continue
-                        # If the keyword was found in the text and was the same with query, then accept the tweet 
-                        # elif text_p.find("strong") and text_p.find("strong").get_text().lower() == self.query_keyword.lower():
-                        #     tweet['keyword'] = text_p.find("strong").get_text()
-                        # elif tweet['text'].lower().find(self.query_keyword.lower()) != -1:
-                        #     tweet['keyword'] = self.query_keyword
-                        # else:
-                        #     # The keyword is not in the text, then pass the tweet.
-                        #     # Tracer()()
-                        #     logging.log(logging.DEBUG, 'No '+self.query_keyword +' in the content of tweet'+': Drop tweet '+tweet['tweet_id'])
-                        #     continue                   
+                        tweet['text'] = text_p.get_text()                                             
                     else:
                         # Tracer()()
                         logging.log(logging.DEBUG, 'No content in the tweet'+': Drop tweet '+tweet['tweet_id'])
@@ -412,12 +343,12 @@ class SearchSpider(scrapy.Spider):
         :return: A string URL
         """
         sequent_q = ' '.join(query.split(','))
-        # Tracer()()
+
         params = {
             'vertical': 'default',
             # Query Param
-            # 'q': query+ ' '+'lang:en'+' '+'since:2007-01-19 until:2014-03-13', #st.john's wort since:2007-01-20 until:2014-03-12 
-            'q': sequent_q,
+            # 'q': query+ ' '+'lang:en'+' '+'since:2007-01-19 until:2014-03-13', #st.john's wort since:2007-01-20 until:2014-03-12
+            'q': sequent_q, 
             # Type Param
             'src': 'typd',
             'f':'tweets'

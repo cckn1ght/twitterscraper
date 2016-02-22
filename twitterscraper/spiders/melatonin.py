@@ -29,8 +29,11 @@ from IPython.core.debugger import Tracer
 
 
 class SearchSpider(scrapy.Spider):
-    name = "search"
+    name = "melatonin"
     allowed_domains = ["twitter.com"]
+    custom_settings= {'MONGODB_COLLECTION': 'melatonin'
+                      # 'LOG_FILE':'logs/melatonin/scrapy.log'
+    }
     start_urls = []
     min_tweet = None
     max_tweet = None
@@ -51,16 +54,16 @@ class SearchSpider(scrapy.Spider):
         """
         self.query = query
         self.query_keyword = query.split(',')[0]
-        if self.query_keyword is "st. john's wort":
-            self.custom_settings= {'MONGODB_COLLECTION': 'st_johns_wort'}     
-        elif self.query_keyword is "echinacea":
-            self.custom_settings= {'MONGODB_COLLECTION': 'echinacea'}
-        elif self.query_keyword is "valerian":
-            self.custom_settings= {'MONGODB_COLLECTION': 'valerian'}
-        elif self.query_keyword is "melatonin":
-            self.custom_settings= {'MONGODB_COLLECTION': 'melatonin'}
+        # if self.query_keyword is "st. john's wort":
+        #     self.custom_settings= {'MONGODB_COLLECTION': 'st_johns_wort'}     
+        # elif self.query_keyword is "echinacea":
+        #     self.custom_settings= {'MONGODB_COLLECTION': 'echinacea'}
+        # elif self.query_keyword is "valerian":
+        #     self.custom_settings= {'MONGODB_COLLECTION': 'valerian'}
+        # elif self.query_keyword is "melatonin":
+        #     self.custom_settings= {'MONGODB_COLLECTION': 'melatonin'}
         
-        Tracer()()
+        # Tracer()()
 
         self.session_id = session_id.strftime('%Y-%m-%d')
         # Tracer()()

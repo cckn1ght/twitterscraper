@@ -25,7 +25,7 @@ class DuplicatesPipeline(MongoDBPipeline):
         matching_item = self.collection.find_one(
             {#'session_id': item['session_id'],
              'tweet_id': item['tweet_id'],
-             'keyword': item['keyword'],
+             # 'keyword': item['keyword'],
              'user_name': item['user_name']}
         )
         if matching_item is not None:
