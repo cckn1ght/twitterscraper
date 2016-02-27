@@ -116,10 +116,23 @@ class SearchSpider(scrapy.Spider):
             else:
                 # TODO: # jump to the yesterday of until_boundary
                 # Tracer()()
+                # if len(tweets) == 1:
+                #     self.max_tweet = tweets[0]
+                #     self.until_boundary = self.max_tweet['created_at_iso'].split(' ')[0]
+                #     self.query['until'] = self.adjust_time_window(self.until_boundary, 0, 'backward')
+                # else:
+                #     Tracer()()
+                #     self.query['until'] = self.adjust_time_window(self.until_boundary, 0, 'backward')
+                if self.until_boundary is self.query['until']:
+                    days_delta = 1
+                else:
+                    days_delta = 0
+                days_delta = 1
                 self.query['until'] = self.adjust_time_window(self.until_boundary, 0, 'backward')
+                # Tracer()()
                 new_time_window_url = self.construct_url(self.query)
                 # self.is_time_window_new = True
-                yield Request(url=new_time_window_url, callback=self.parse, dont_filter=True)
+                yield Request(url=new_time_window_url, callback=self.parse,dont_filter=True)
             # If we have no tweets, then we can break the loop early
         else:
             if response.url is not self.start_urls[0]:
@@ -132,7 +145,11 @@ class SearchSpider(scrapy.Spider):
                     return
                 else:
                     # Tracer()()
-                    self.query['until'] = self.adjust_time_window(self.until_boundary, 0, 'backward')
+                    if self.until_boundary is self.query['until']:
+                        days_delta = 1
+                    else:
+                        days_delta = 0
+                    self.query['until'] = self.adjust_time_window(self.until_boundary, days_delta, 'backward')
                     new_time_window_url = self.construct_url(self.query)
 
                     logging.log(logging.INFO,'Construct new time window: [%s,%s)'%
@@ -142,7 +159,7 @@ class SearchSpider(scrapy.Spider):
                         )
                     )
 
-                    yield Request(url=new_time_window_url, callback=self.parse, dont_filter=True)
+                    yield Request(url=new_time_window_url, callback=self.parse,dont_filter=True)
                 # jump to the yesterday of until_boundary
             else:
                 Tracer()()
@@ -154,7 +171,7 @@ class SearchSpider(scrapy.Spider):
                             self.query['until']
                         )
                     )
-                yield Request(url=new_time_window_url, callback=self.parse, dont_filter=True)
+                yield Request(url=new_time_window_url, callback=self.parse,dont_filter=True)
 
 
 
