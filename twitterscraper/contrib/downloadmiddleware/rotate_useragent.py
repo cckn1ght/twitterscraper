@@ -7,6 +7,7 @@ from scrapy.downloadermiddlewares.useragent import UserAgentMiddleware
 
 from IPython.core.debugger import Tracer
 import logging
+import traceback
 
 class RotateUserAgentMiddleware(UserAgentMiddleware):
     """
@@ -23,7 +24,8 @@ class RotateUserAgentMiddleware(UserAgentMiddleware):
         super(
             RotateUserAgentMiddleware, self
             ).__init__()
-        self.user_agent = user_agent     
+        self.user_agent = user_agent  
+        self.odds = settings.get('USER_AGENT_CHANGING_ODDS')   
         # Tracer()()
         user_agent_list_file = settings.get('USER_AGENT_LIST')
         if not user_agent_list_file:
@@ -45,7 +47,7 @@ class RotateUserAgentMiddleware(UserAgentMiddleware):
 
     def process_request(self, request, spider):
         try:
-            if random.choice(xrange(1,100)) <= 33:
+            if random.choice(xrange(1,100)) <= self.odds:
                 user_agent = random.choice(self.user_agent_list)
                 if user_agent:
                     logging.log(logging.DEBUG,'Change user agent to :'+user_agent)

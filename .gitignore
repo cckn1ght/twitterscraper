@@ -46,3 +46,12 @@ twitterscraper/contrib/downloadmiddleware/rotate_useragent.pyc
 *.pyc
 
 twitterscraper/spiders/search.pyc
+<<<<<<< HEAD
+=======
+
+logs/scrapy.log.0.bz2
+
+logs/scrapy.log.1.bz2
+
+logs/scrapy.log.2.bz2
+>>>>>>> origin/ood-branch

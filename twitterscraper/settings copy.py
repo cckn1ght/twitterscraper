@@ -132,4 +132,4 @@ LOG_FILE = "logs/scrapy.log"
 MONGODB_SERVER = "localhost"
 MONGODB_PORT = 27017
 MONGODB_DB = "tweets"
-MONGODB_COLLECTION = "tweet_detail"
+MONGODB_COLLECTION = "echinacea"

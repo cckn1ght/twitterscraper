@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 import time
 import datetime
-<<<<<<< HEAD
-=======
-import traceback
->>>>>>> origin/ood-branch
 from pprint import pprint
 import urlparse
+import traceback
 from urlparse import urlunparse
 from urllib import urlencode
 from urllib import urlopen
@@ -33,8 +30,11 @@ from IPython.core.debugger import Tracer
 
 
 class SearchSpider(scrapy.Spider):
-    name = "search"
+    name = "melatonin"
     allowed_domains = ["twitter.com"]
+    custom_settings= {'MONGODB_COLLECTION': 'melatonin'
+                      # 'LOG_FILE':'logs/melatonin/scrapy.log'
+    }
     start_urls = []
     min_tweet = None
     max_tweet = None
@@ -46,11 +46,7 @@ class SearchSpider(scrapy.Spider):
         # super(SearchSpider, self).__init__(*args, **kwargs)
         # query = kwargs.get('query')
         session_id = datetime.datetime.utcnow().date()
-<<<<<<< HEAD
-
-=======
         
->>>>>>> origin/ood-branch
         """
         Scrape items from twitter
         :param query:   Query to search Twitter with. Takes form of queries
@@ -58,16 +54,38 @@ class SearchSpider(scrapy.Spider):
                         advanced search: https://twitter.com/search-advanced
         """
         self.query = query
-<<<<<<< HEAD
-=======
         self.query_keyword = query.split(',')[0]
+        # if self.query_keyword is "st. john's wort":
+        #     self.custom_settings= {'MONGODB_COLLECTION': 'st_johns_wort'}     
+        # elif self.query_keyword is "echinacea":
+        #     self.custom_settings= {'MONGODB_COLLECTION': 'echinacea'}
+        # elif self.query_keyword is "valerian":
+        #     self.custom_settings= {'MONGODB_COLLECTION': 'valerian'}
+        # elif self.query_keyword is "melatonin":
+        #     self.custom_settings= {'MONGODB_COLLECTION': 'melatonin'}
+        
+        # Tracer()()
 
->>>>>>> origin/ood-branch
         self.session_id = session_id.strftime('%Y-%m-%d')
         # Tracer()()
         url = self.construct_url(self.query)
         # Tracer()()
         self.start_urls.append(url)
+
+        # self.set_crawler(self.crawler)
+
+    # def set_crawler(self, crawler):
+    #     super(SearchSpider, self).set_crawler(crawler)
+    #     if self.query_keyword is "st. john's wort":
+    #         crawler.settings.set('MONGODB_COLLECTION','st_johns_wort')
+    #     elif self.query_keyword is "echinacea":
+    #         crawler.settings.set('MONGODB_COLLECTION','echinacea')
+    #     elif self.query_keyword is "valerian":
+    #         crawler.settings.set('MONGODB_COLLECTION','valerian')
+    #     elif self.query_keyword is "melatonin":
+    #         crawler.settings.set('MONGODB_COLLECTION','melatonin')
+    #     else:
+    #         crawler.settings.set('MONGODB_COLLECTION','tweet_detail_test')
 
     def parse(self, response):
         # Random string is used to construct the XHR sent to twitter.com
@@ -75,92 +93,6 @@ class SearchSpider(scrapy.Spider):
         data = json.loads(response.body_as_unicode())
         #default rate delay is 12s
         # rate_delay = self.settings['DOWNLOAD_DELAY']
-<<<<<<< HEAD
-        rate_delay = 2
-
-        # delay_choices = [(1,30), (2,25), (3,20),(4,15),(5,10)]
-        # delay_choices = [(1,50), (2,30), (3,10),(4,8),(5,2)]
-        delay_choices = [(0,1),(1,89), (2,4), (3,3),(4,2),(5,1)]
-        # delay_choices = [(1,60), (2,20), (3,10),(4,8),(5,2)]
-        # delay_choices = [(0,33),(1,56), (2,5), (3,3),(4,2),(5,1)]
-        # if data["max_position"] is not None:
-
-        if data is not None and data['items_html'] is not None:
-            tweets = self.extract_tweets(data['items_html'])
-            referring_url = response.request.headers.get('Referer', None) or self.start_urls[0]
-            request_url = response.url
-
-            if len(tweets) == 0 and data['has_more_items'] is False:
-                Tracer()()
-                # self.max_position = "TWEET-%s-%s-%s" % (self.max_tweet['tweet_id'], self.min_tweet['tweet_id'],random_str)
-                # next_url = self.construct_url(self.query, max_position=self.max_position,operater="min_position")
-                # Sleep for our rate_delay
-                # time.sleep( random.uniform(0, self.settings['DOWNLOAD_DELAY']))
-                pprint(data)
-                logging.log(logging.DEBUG, data)
-                logging.log(logging.INFO, "Reach the end of search results( " + self.query + " )")
-                return
-
-            for tweet in tweets:
-                # push parsed item to mongoDB pipline
-                yield self.parse_tweet(tweet, response)
-            # If we have no tweets, then we can break the loop early
-
-                # yield Request(url=next_url, callback=self.parse)
-
-            # If we haven't set our min tweet yet, set it now
-            if self.min_tweet is None:
-                self.is_first_query = True
-                self.min_tweet = tweets[0]
-            elif self.min_tweet is not tweets[0]:
-                self.min_tweet = tweets[0]
-
-            # continue_search = self.save_tweets(tweets)
-
-            # The max tweet is the last tweet in the list
-            self.max_tweet = tweets[-1]
-            if self.min_tweet['tweet_id'] is not self.max_tweet['tweet_id']:
-                self.max_position = "TWEET-%s-%s-%s" % (
-                    self.max_tweet['tweet_id'],
-                    self.min_tweet['tweet_id'],
-                    random_str)
-                '''
-                    is_first_query is a indicator used to identify the intial query. With the intial query
-                    the crwaler can simulate the hand-shake request while the delay time is greater than a
-                    predefined time period, for instance, 22 seconds
-                '''
-                if self.is_first_query:
-                    self.data_max_position = self.max_position
-                    self.is_first_query = False
-                # Construct next url to crawl
-                next_url = self.construct_url(
-                    self.query,
-                    max_position=self.max_position,
-                    operater="max_position")
-
-                # Sleep for rate_delay
-                # Tracer()()
-                delay_multiple = self.weighted_choice(delay_choices)
-                if delay_multiple is not 0:
-                    delay_time = random.uniform(rate_delay*(delay_multiple-1), rate_delay*delay_multiple)
-                    logging.log(logging.DEBUG,"Sleep for "+ str(delay_time) +" seconds")
-                    time.sleep(delay_time)
-                    # if delay_time > 22:
-                    #     next_url = self.construct_url(
-                    #         self.query,
-                    #         max_position=self.data_max_position,
-                    #         operater="min_position")
-                    #     yield Request(url=next_url, callback=self.parse,dont_filter=True)
-                else:
-                    logging.log(logging.DEBUG,"Sleep for 0 seconds")
-
-                print
-                print "Next Request:" + "TWEET-%s-%s" % (
-                    self.max_tweet['tweet_id'], self.min_tweet['tweet_id'])
-                print
-                # Tracer()()
-                yield Request(url=next_url, callback=self.parse,dont_filter=True)
-=======
         # rate_delay = 2
 
         # delay_choices = [(1,30), (2,25), (3,20),(4,15),(5,10)]
@@ -239,10 +171,9 @@ class SearchSpider(scrapy.Spider):
                         self.max_tweet['tweet_id'], self.min_tweet['tweet_id'])
                     print
                     # Tracer()()
-                    yield Request(url=next_url, callback=self.parse, dont_filter=True)
+                    yield Request(url=next_url, callback=self.parse,dont_filter=True)
         except Exception, e:
             pass
->>>>>>> origin/ood-branch
 
     def weighted_choice(self, choices):
         """
@@ -288,14 +219,11 @@ class SearchSpider(scrapy.Spider):
         tweet_item['quote_tweet_username'] = tweet['quote_tweet_username']
         tweet_item['quote_tweet_screenname'] = tweet['quote_tweet_screenname']
         tweet_item['quote_tweet_text'] = tweet['quote_tweet_text']
-<<<<<<< HEAD
-=======
         try:
             tweet_item['html'] = tweet['html']
         except Exception,e:
             Tracer()()
             pass
->>>>>>> origin/ood-branch
         # Tracer()()
         return tweet_item
 
@@ -314,20 +242,12 @@ class SearchSpider(scrapy.Spider):
                 )
 
             for li in soup.find_all("li", class_='js-stream-item'):
-<<<<<<< HEAD
-
-=======
                 # Tracer()()
->>>>>>> origin/ood-branch
                 # If our li doesn't have a tweet-id, we skip it as it's not going
                 # to be a tweet.
                 if 'data-item-id' not in li.attrs:
                     continue
-<<<<<<< HEAD
-                # Tracer()()
-=======
 
->>>>>>> origin/ood-branch
                 tweet = {
                     'tweet_id': li['data-item-id'],
                     'text': None,
@@ -342,14 +262,6 @@ class SearchSpider(scrapy.Spider):
                     'num_retweets': 0,
                     'num_favorites': 0,
                     'keyword': [],
-<<<<<<< HEAD
-                    'quote_tweet_id': None,
-                    'quote_tweet_userid': None,
-                    'quote_tweet_username': None,
-                    'quote_tweet_screenname': None,
-                    'quote_tweet_text': None
-                }
-=======
                     'quote_tweet_id':None,
                     'quote_tweet_userid':None,
                     'quote_tweet_username' :None,
@@ -362,7 +274,6 @@ class SearchSpider(scrapy.Spider):
                 except Exception,e:
                     Tracer()()
                     pass
->>>>>>> origin/ood-branch
 
                 '''
                 Extract tweet text
@@ -392,25 +303,6 @@ class SearchSpider(scrapy.Spider):
                             # text_p = text_p.replace(
                             #     str(emoji), emoji['alt'].decode('ascii')
                             #     )
-<<<<<<< HEAD
-                        tweet['text'] = text_p.get_text()
-
-                        # # If there is any user mention containing the query, then pass the tweet.
-                        # # Tracer()()
-                        # user_mentions = twitter_username_re.match(tweet['text'])
-                        # if user_mentions and any([self.query.lower() in user_mention.lower() for user_mention in user_mentions.groups()]):
-                        #     # Tracer()()
-                        #     logging.log(logging.DEBUG, 'Found '+self.query+' in '+ str(user_mentions.groups())+': Drop tweet '+tweet['tweet_id'])
-                        #     continue
-                        # # If the keyword was found in the text and was the same with query, then accept the tweet
-                        # if text_p.find("strong") and text_p.find("strong").get_text().lower() == self.query.lower():
-                        #     tweet['keyword'] = text_p.find("strong").get_text()
-                        # else:
-                        #     # The keyword is not in the text, then pass the tweet.
-                        #     # Tracer()()
-                        #     logging.log(logging.DEBUG, 'No '+self.query+' in the content of tweet'+': Drop tweet '+tweet['tweet_id'])
-                        #     continue
-=======
                         tweet['text'] = text_p.get_text()               
 
                         # If there is any user mention containing the query, then pass the tweet.
@@ -431,7 +323,6 @@ class SearchSpider(scrapy.Spider):
                         #     # Tracer()()
                         #     logging.log(logging.DEBUG, 'No '+self.query_keyword +' in the content of tweet'+': Drop tweet '+tweet['tweet_id'])
                         #     continue                   
->>>>>>> origin/ood-branch
                     else:
                         # Tracer()()
                         logging.log(logging.DEBUG, 'No content in the tweet'+': Drop tweet '+tweet['tweet_id'])
@@ -479,25 +370,8 @@ class SearchSpider(scrapy.Spider):
                             tweet['created_at_iso'] = datetime.datetime.fromtimestamp(tweet["created_at_ts"]).isoformat(' ')
                         except Exception, e:
                             Tracer()()
-<<<<<<< HEAD
-                            logging.log(logging.DEBUG, "ERROR(extract _timestamp): %s"%(str(e),))
-                            traceback.print_exc()
-                    # convo_a_tag = li.find("div",class_="stream-item-footer").find_next("a",class_="js-details")
-                    # if convo_a_tag is not None:
-                    #   print
-                    #   print "convo_a_tag:"+ str(convo_a_tag['href'])
-                    #   print
-                    # tweet['convo_url'] = str(convo_a_tag)
-
-                    # Tweet image url
-                    # img_url_divs = li.select("div.js-old-photo")
-                    # if len(img_url_divs) > 0:
-                    #     for img_url_div in img_url_divs:
-                    #         tweet['image_url'].append(img_url_div['data-image-url'])
-=======
                             logging.log(logging.DEBUG, "ERROR(extract _timestamp): %s"%(str(e),)) 
                             traceback.print_exc()
->>>>>>> origin/ood-branch
 
                     # Tweet Retweets
                     retweet_span = li.select(
@@ -519,19 +393,11 @@ class SearchSpider(scrapy.Spider):
 
                 # self.parse_tweet(tweet)
                 # Tracer()()#break point
-<<<<<<< HEAD
-
-                print
-                print tweet['tweet_id']+': '+tweet['created_at_iso']+' '+'['+tweet['user_name']+']'+' '+tweet['text']
-                print
-
-=======
                 
                 print
                 print tweet['tweet_id']+': '+tweet['created_at_iso']+' '+'['+tweet['user_name']+']'+' '+tweet['text']
                 print
                 
->>>>>>> origin/ood-branch
 
                 tweets.append(tweet)
             return tweets
@@ -549,16 +415,6 @@ class SearchSpider(scrapy.Spider):
         pagination of tweets
         :return: A string URL
         """
-<<<<<<< HEAD
-
-        params = {
-            'vertical': 'default',
-            # Query Param
-            'q': query+ ' '+'lang:en'+' '+ 'since:2014-01-01 until:2016-02-17', #melatonin 2015-04-09 return only one tweet
-            # Type Param
-            'src': 'typd',
-            'f': 'tweets'
-=======
         sequent_q = ' '.join(query.split(','))
         # Tracer()()
         params = {
@@ -569,7 +425,6 @@ class SearchSpider(scrapy.Spider):
             # Type Param
             'src': 'typd',
             'f':'tweets'
->>>>>>> origin/ood-branch
         }
 
         #todo develop a query operator recognize function
@@ -579,17 +434,10 @@ class SearchSpider(scrapy.Spider):
         #     # matches is now ['String 1', 'String 2', 'String3']
         #     return ",".join(matches)
 
-<<<<<<< HEAD
-        # q = doit(query)
-
-        # params = {
-        #     'vertical': 'default',
-=======
         # q = doit(query) 
 
         # params = {
         #     'vertical': 'default',            
->>>>>>> origin/ood-branch
         #     # Type Param
         #     'src': 'typd'
         # }
