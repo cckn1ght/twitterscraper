@@ -24,7 +24,7 @@ CONCURRENT_REQUESTS=32
 # Configure a delay for requests for the same website (default: 0)
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-DOWNLOAD_DELAY=2.5
+DOWNLOAD_DELAY=0.25
 # The download delay setting will honor only one of:
 # CONCURRENT_REQUESTS_PER_DOMAIN=16
 CONCURRENT_REQUESTS_PER_IP=32
@@ -67,6 +67,9 @@ ITEM_PIPELINES = {
    'scrapy_mongodb.MongoDBPipeline':300,
    # 'twitterscraper.pipelines.MongoDBPipeline_test': 300,
    'twitterscraper.pipelines.DuplicatesPipeline': 250,
+   # 
+   'twitterscraper.pipelines.FilterNoContentPipeline': 150,
+   'twitterscraper.pipelines.FilterUserMentionPipeline': 200,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
@@ -78,7 +81,7 @@ AUTOTHROTTLE_START_DELAY=20.0
 # The maximum download delay to be set in case of high latencies
 AUTOTHROTTLE_MAX_DELAY=60.0
 # Enable showing throttling stats for every response received:
-# AUTOTHROTTLE_DEBUG=True
+AUTOTHROTTLE_DEBUG=True
 # AUTOTHROTTLE_CONCURRENCY_CHECK_PERIOD = 10#How many responses should pass to perform concurrency adjustments.
 
 # Enable and configure HTTP caching (disabled by default)
@@ -106,12 +109,12 @@ DOWNLOADER_MIDDLEWARES = {
     # 'twitterscraper.contrib.downloadmiddleware.google_cache.GoogleCacheMiddleware':0,
     'scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware': None,
     'twitterscraper.contrib.downloadmiddleware.rotate_useragent.RotateUserAgentMiddleware':400,
-    'scrapy.downloadermiddlewares.retry.RetryMiddleware': 90,
+    # 'scrapy.downloadermiddlewares.retry.RetryMiddleware': 90,
     # Fix path to this module
-    'twitterscraper.contrib.downloadmiddleware.randomproxy.RandomProxy': 100,
-    'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 110,
+    # 'twitterscraper.contrib.downloadmiddleware.randomproxy.RandomProxy': 100,
+    # 'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 110,
 }
-DOWNLOAD_TIMEOUT = 5
+DOWNLOAD_TIMEOUT = 20
 
 
 # DOWNLOADER_MIDDLEWARES = {
@@ -132,9 +135,13 @@ DOWNLOAD_TIMEOUT = 5
 # http://host3:port
 # ...
 PROXY_LIST = '_reliable_list.txt'
+PROXY_CHANGING_ODDS = 90
+
 USER_AGENT_LIST = "_user_agent_list.txt"
-# LOG_FILE = "logs/scrapy.log"
-LOG_ENABLED = False
+USER_AGENT_CHANGING_ODDS = 60
+
+LOG_FILE = "logs/scrapy.log"
+LOG_ENABLED = True
 
 # scrapy-webdriver settings
 # DOWNLOAD_HANDLERS = {

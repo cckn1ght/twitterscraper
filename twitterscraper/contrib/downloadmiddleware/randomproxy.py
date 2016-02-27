@@ -22,6 +22,7 @@ import re
 import random
 import base64
 import logging
+# from scrapy.conri
 
 logger = logging.getLogger('scrapy')
 
@@ -31,6 +32,7 @@ class RandomProxy(object):
     def __init__(self, settings):
         # Tracer()()
         self.proxy_list = settings.get('PROXY_LIST')
+        self.odds = settings.get('PROXY_CHANGING_ODDS')
 
         try:
             fin = open(self.proxy_list)
@@ -42,23 +44,26 @@ class RandomProxy(object):
         data = fin.readlines()
         if len(data) == 0:
             # Tracer()()
-            log.msg('The proxy_list is empty')
+            logger.info('The proxy_list is empty')
             return
         for line in data:
-            parts = re.match('(\w+://)(\w+:\w+@)?(.+)', line)
+            # Reconize proxy that with "http://
+            # parts = re.match('(\w+://)(\w+:\w+@)?(.+)', line)
+            # Reconize proxy that without "http://"
+            parts = re.match('(\w+:\w+@)?(.+)', line)
 
             if parts is None:
                 # Tracer()()
-                log.msg('Did not read the line')
+                logger.info('Did not read the line')
                 return
-
+            # Tracer()()
             # Cut trailing @
-            if parts.group(2):
-                user_pass = parts.group(2)[:-1]
+            if parts.group(1):
+                user_pass = parts.group(1)[:-1]
             else:
                 user_pass = ''
 
-            self.proxies[parts.group(1) + parts.group(3)] = user_pass
+            self.proxies["http://"+parts.group(2)] = user_pass
 
         fin.close()
 
@@ -75,24 +80,61 @@ class RandomProxy(object):
         if len(self.proxies) == 0:
             raise ValueError('All proxies are unusable, cannot proceed')
 
-        if random.choice(xrange(1,100)) <= 15:
+        self.random_pick_proxy(request, self.odds)
+
+    def random_pick_proxy(self, request, odds=100):
+        # Change proxy here
+        # Then check number of retries on the request 
+        # and decide if you want to give it another chance.
+        # If not - return None else
+        if random.choice(xrange(1,100)) <= odds:
             proxy_address = random.choice(self.proxies.keys())
             proxy_user_pass = self.proxies[proxy_address]
 
             request.meta['proxy'] = proxy_address
 
-            print 'Changing to proxy <' + proxy_address + '>, ' + str(len(self.proxies))+ ' proxies left'
-            # logger.info('Changing to proxy <%s>, %d proxies left' % (proxy_address, len(self.proxies)))
+            print ('Changing to proxy <' + proxy_address + '>')
+            logger.info('Changing to proxy <%s>, %d proxies left' % (proxy_address, len(self.proxies)))
 
             if proxy_user_pass:
                 basic_auth = 'Basic ' + base64.encodestring(proxy_user_pass)
                 request.headers['Proxy-Authorization'] = basic_auth
 
+    # def process_exception(self, request, exception, spider):
+    #     try:
+    #         proxy = request.meta['proxy']
+    #         del self.proxies[proxy]
+    #         print ('Removing failed proxy <' + proxy + '>, ' + str(len(self.proxies)) + ' proxies left')
+    #         logger.info('Removing failed proxy <' + proxy + '>, ' + str(len(self.proxies)) + ' proxies left')
+    #     except KeyError:
+    #         pass        
+    #     except Exception, e:
+    #         pass  
+
+    def process_response(self, request, response, spider):
+       if response.status in [403, 400] and 'proxy' in request.meta:
+           # Tracer()()
+           logger.info('Response status: {0} using proxy {1} retrying request to {2}'.format(response.status, request.meta['proxy'], request.url))
+           proxy = request.meta['proxy']
+           del request.meta['proxy']
+           try:
+               del self.proxies[proxy]
+               logger.info('Removing banned proxy <{0}>, {1} proxies left'.format(proxy, len(self.proxies)))
+           except KeyError:
+               pass
+           return request
+       return response
+
     def process_exception(self, request, exception, spider):
-        proxy = request.meta['proxy']
-       
-        try:
-            del self.proxies[proxy]
-        except KeyError:
-            pass                    
-        print 'Removing failed proxy <' + proxy_address + '>, ' + str(len(self.proxies)) + ' proxies left'
+        if 'proxy' in request.meta:
+            # Tracer()()
+            proxy = request.meta['proxy']
+            del request.meta['proxy']
+            try:
+                del self.proxies[proxy]
+                logger.info('Removing failed proxy <{0}>, {1} proxies left'.format(proxy, len(self.proxies)))
+            except KeyError:
+                pass
+            # self.random_pick_proxy(request, 100)
+            return request
+            # return request
