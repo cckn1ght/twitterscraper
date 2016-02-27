@@ -109,10 +109,10 @@ DOWNLOADER_MIDDLEWARES = {
     # 'twitterscraper.contrib.downloadmiddleware.google_cache.GoogleCacheMiddleware':0,
     'scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware': None,
     'twitterscraper.contrib.downloadmiddleware.rotate_useragent.RotateUserAgentMiddleware':400,
-    # 'scrapy.downloadermiddlewares.retry.RetryMiddleware': 90,
+    'scrapy.downloadermiddlewares.retry.RetryMiddleware': 90,
     # Fix path to this module
-    # 'twitterscraper.contrib.downloadmiddleware.randomproxy.RandomProxy': 100,
-    # 'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 110,
+    'twitterscraper.contrib.downloadmiddleware.randomproxy.RandomProxy': 100,
+    'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 110,
 }
 DOWNLOAD_TIMEOUT = 20
 
@@ -135,13 +135,13 @@ DOWNLOAD_TIMEOUT = 20
 # http://host3:port
 # ...
 PROXY_LIST = '_reliable_list.txt'
-PROXY_CHANGING_ODDS = 90
+PROXY_CHANGING_ODDS = 33
 
 USER_AGENT_LIST = "_user_agent_list.txt"
 USER_AGENT_CHANGING_ODDS = 60
 
 LOG_FILE = "logs/scrapy.log"
-LOG_ENABLED = True
+LOG_ENABLED = False
 
 # scrapy-webdriver settings
 # DOWNLOAD_HANDLERS = {

@@ -15,12 +15,13 @@ from IPython.core.debugger import Tracer
 '''Loading the list of users' screen_name '''
 
 configure_logging({'LOG_FORMAT': '%(levelname)s: %(message)s',
-	'LOG_FILE': 'logs/scrapy.log'
+	'LOG_FILE': 'logs/scrapy.log',
+	'LOG_ENABLED': False
 	}
 	)
 runner = CrawlerRunner(get_project_settings())
 
-q = 'melatonin,lang:en,since:2006-03-21,until:2016-02-01'
+q = 'valerian,lang:en,since:2006-03-21,until:2010-12-23'
 d = runner.crawl('test', domain='twitter.com', query=q)
 
 d.addBoth(lambda _: reactor.stop())
