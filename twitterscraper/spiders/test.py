@@ -33,7 +33,7 @@ from IPython.core.debugger import Tracer
 class SearchSpider(scrapy.Spider):
     name = "test"
     allowed_domains = ["twitter.com"]
-    custom_settings= {'MONGODB_COLLECTION': 'valerian'
+    custom_settings= {'MONGODB_COLLECTION': 'melatonin'
                       # 'LOG_FILE':'logs/echinacea/scrapy.log'
     }
     start_urls = []
@@ -56,8 +56,9 @@ class SearchSpider(scrapy.Spider):
         self.query_keyword = query.split(',')[0]
         self.min_tweet = {}
         self.max_tweet = {}
-        # self.very_last_tweet_id = "713813" #melatonin' last tweet
-        self.very_last_tweet_id = "25283831" #valerian's last tweet 
+        self.very_last_tweet_id = "713813" #melatonin' last tweet
+        # self.very_last_tweet_id = "25283831" #valerian's last tweet 
+        # self.very_last_tweet_id = '291475022'  # st johns wort 2014-04-14
         self.until_boundary = self.query['until']
 
         self.session_id = session_id.strftime('%Y-%m-%d')
@@ -116,22 +117,26 @@ class SearchSpider(scrapy.Spider):
             else:
                 # TODO: # jump to the yesterday of until_boundary
                 # Tracer()()
-                # if len(tweets) == 1:
-                #     self.max_tweet = tweets[0]
-                #     self.until_boundary = self.max_tweet['created_at_iso'].split(' ')[0]
-                #     self.query['until'] = self.adjust_time_window(self.until_boundary, 0, 'backward')
+                if len(tweets) == 1:
+                    self.max_tweet = tweets[0]
+                    self.until_boundary = self.max_tweet['created_at_iso'].split(' ')[0]
+                    self.query['until'] = self.adjust_time_window(self.until_boundary, 0, 'backward')
+                # if self.until_boundary is self.query['until']:
+                #     days_delta = 1
                 # else:
-                #     Tracer()()
-                #     self.query['until'] = self.adjust_time_window(self.until_boundary, 0, 'backward')
-                if self.until_boundary is self.query['until']:
-                    days_delta = 1
-                else:
-                    days_delta = 0
-                days_delta = 1
-                self.query['until'] = self.adjust_time_window(self.until_boundary, 0, 'backward')
+                #     days_delta = 0
+                # days_delta = 1
+                # self.query['until'] = self.adjust_time_window(self.until_boundary, 0, 'backward')
                 # Tracer()()
                 new_time_window_url = self.construct_url(self.query)
                 # self.is_time_window_new = True
+                print
+                print "Parsed "+str(data['new_latent_count'])+" Tweets,"
+                print "Next Request:" + "since:%s, until:%s" % (
+                    self.query['since'],
+                    self.query['until']
+                    )
+                print
                 yield Request(url=new_time_window_url, callback=self.parse,dont_filter=True)
             # If we have no tweets, then we can break the loop early
         else:
@@ -151,13 +156,19 @@ class SearchSpider(scrapy.Spider):
                         days_delta = 0
                     self.query['until'] = self.adjust_time_window(self.until_boundary, days_delta, 'backward')
                     new_time_window_url = self.construct_url(self.query)
-
                     logging.log(logging.INFO,'Construct new time window: [%s,%s)'%
                         (
                             self.query['since'],
                             self.query['until']
                         )
                     )
+                    print
+                    print "Parsed "+str(data['new_latent_count'])+" Tweets,"
+                    print "Next Request:" + "since:%s, until:%s" % (
+                        self.query['since'],
+                        self.query['until']
+                        )
+                    print
 
                     yield Request(url=new_time_window_url, callback=self.parse,dont_filter=True)
                 # jump to the yesterday of until_boundary
@@ -171,6 +182,13 @@ class SearchSpider(scrapy.Spider):
                             self.query['until']
                         )
                     )
+                print
+                print "Parsed "+str(data['new_latent_count'])+" Tweets,"
+                print "Next Request:" + "since:%s, until:%s" % (
+                    self.query['since'],
+                    self.query['until']
+                    )
+                print
                 yield Request(url=new_time_window_url, callback=self.parse,dont_filter=True)
 
 
