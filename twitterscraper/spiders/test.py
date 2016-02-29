@@ -56,7 +56,9 @@ class SearchSpider(scrapy.Spider):
         self.query_keyword = query.split(',')[0]
         self.min_tweet = {}
         self.max_tweet = {}
-        self.very_last_tweet_id = "713813"
+        self.very_last_tweet_id = "713813" #melatonin' last tweet
+        # self.very_last_tweet_id = "25283831" #valerian's last tweet 
+        # self.very_last_tweet_id = '291475022'  # st johns wort 2014-04-14
         self.until_boundary = self.query['until']
 
         self.session_id = session_id.strftime('%Y-%m-%d')
@@ -64,7 +66,7 @@ class SearchSpider(scrapy.Spider):
         url = self.construct_url(self.query)
         # Tracer()()
         self.start_urls.append(url)
-        Tracer()()
+        # Tracer()()
 
     def parse(self, response):
         # Random string is used to construct the XHR sent to twitter.com
@@ -85,7 +87,8 @@ class SearchSpider(scrapy.Spider):
                 #     self.until_boundary = tweets[-1]['created_at_iso'].split(' ')[0]
                 # else:
                 #     self.until_boundary = self.query['until']
-                Tracer()()
+                # Tracer()()
+                # if self.min_tweet[created_at_iso].split(' ')[0] is self.max_tweet['created_at_iso'].split(' ')[0]:
                 self.until_boundary = tweets[-1]['created_at_iso'].split(' ')[0]
                 # The max tweet is the last tweet in the list
                 self.min_tweet = tweets[0]
@@ -113,26 +116,81 @@ class SearchSpider(scrapy.Spider):
                 yield Request(url=next_url, callback=self.parse, dont_filter=True)
             else:
                 # TODO: # jump to the yesterday of until_boundary
-                Tracer()()
-                self.query['until'] = self.adjust_time_window(self.until_boundary, 1, 'backward')
+                # Tracer()()
+                if len(tweets) == 1:
+                    self.max_tweet = tweets[0]
+                    self.until_boundary = self.max_tweet['created_at_iso'].split(' ')[0]
+                    self.query['until'] = self.adjust_time_window(self.until_boundary, 0, 'backward')
+                # if self.until_boundary is self.query['until']:
+                #     days_delta = 1
+                # else:
+                #     days_delta = 0
+                # days_delta = 1
+                # self.query['until'] = self.adjust_time_window(self.until_boundary, 0, 'backward')
+                # Tracer()()
                 new_time_window_url = self.construct_url(self.query)
                 # self.is_time_window_new = True
-                yield Request(url=new_time_window_url, callback=self.parse, dont_filter=True)
+                print
+                print "Parsed "+str(data['new_latent_count'])+" Tweets,"
+                print "Next Request:" + "since:%s, until:%s" % (
+                    self.query['since'],
+                    self.query['until']
+                    )
+                print
+                yield Request(url=new_time_window_url, callback=self.parse,dont_filter=True)
             # If we have no tweets, then we can break the loop early
         else:
-            if self.isEnd(response):
-                pprint(data)
-                logging.log(logging.DEBUG, data)
-                logging.log(logging.INFO, "Reach the end of search results( " + self.query_str + " )")
-                print( "Reach the end of search results( " + self.query_str + " )")
-                return
+            if response.url is not self.start_urls[0]:
+                if self.is_end():
+                    # Tracer()()
+                    pprint(data)
+                    logging.log(logging.DEBUG, data)
+                    logging.log(logging.INFO, "Reach the end of search results( " + self.query_str + " )")
+                    print( "Reach the end of search results( " + self.query_str + " )")
+                    return
+                else:
+                    # Tracer()()
+                    if self.until_boundary is self.query['until']:
+                        days_delta = 1
+                    else:
+                        days_delta = 0
+                    self.query['until'] = self.adjust_time_window(self.until_boundary, days_delta, 'backward')
+                    new_time_window_url = self.construct_url(self.query)
+                    logging.log(logging.INFO,'Construct new time window: [%s,%s)'%
+                        (
+                            self.query['since'],
+                            self.query['until']
+                        )
+                    )
+                    print
+                    print "Parsed "+str(data['new_latent_count'])+" Tweets,"
+                    print "Next Request:" + "since:%s, until:%s" % (
+                        self.query['since'],
+                        self.query['until']
+                        )
+                    print
+
+                    yield Request(url=new_time_window_url, callback=self.parse,dont_filter=True)
+                # jump to the yesterday of until_boundary
             else:
                 Tracer()()
-                self.query['until'] = self.adjust_time_window(self.until_boundary, 1, 'backward')
+                self.query['until'] = self.adjust_time_window(self.query['until'], 1, 'backward')
                 new_time_window_url = self.construct_url(self.query)
-                self.is_time_window_new = True
-                yield Request(url=new_time_window_url, callback=self.parse, dont_filter=True)
-                # jump to the yesterday of until_boundary
+                logging.log(logging.INFO,'Construct new time window: [%s, %s)'%
+                        (
+                            self.query['since'],
+                            self.query['until']
+                        )
+                    )
+                print
+                print "Parsed "+str(data['new_latent_count'])+" Tweets,"
+                print "Next Request:" + "since:%s, until:%s" % (
+                    self.query['since'],
+                    self.query['until']
+                    )
+                print
+                yield Request(url=new_time_window_url, callback=self.parse,dont_filter=True)
+
 
 
     def parse_tweet(self, tweet,response):
@@ -148,7 +206,7 @@ class SearchSpider(scrapy.Spider):
         tweet_item['num_retweets'] = tweet['num_retweets']
         tweet_item['num_favorites'] = tweet['num_favorites']
         tweet_item['keyword'] = tweet['keyword']
-        tweet_item['query'] = self.query
+        tweet_item['query'] = self.query_str
         tweet_item['referring_url'] = response.request.headers.get('Referer', None) or self.start_urls[0]
         tweet_item['request_url'] = response.url
         tweet_item['quote_tweet_id'] = tweet['quote_tweet_userid']
@@ -355,9 +413,11 @@ class SearchSpider(scrapy.Spider):
             traceback.print_exc()
             pass
 
+    # def construct_new_time_window_url(self,window_boundary,time_window_operator='until',days=1,'')
+
     def adjust_time_window(self, boundary, days=1, direction='backward'):
         boundary_obj = datetime.datetime.strptime(boundary,'%Y-%m-%d')
-        time_delta = datetime.time_delta(days=days)
+        time_delta = datetime.timedelta(days=days)
         if direction is 'backward':
             boundary_obj = boundary_obj - time_delta
         elif direction is 'forward':
@@ -367,25 +427,25 @@ class SearchSpider(scrapy.Spider):
             traceback.print_exc()
         return boundary_obj.strftime('%Y-%m-%d')
 
-    def isEnd(self,response):
+    def is_end(self):
         '''
-        1. The query is new cursor query, no tweets
-            1.1 the query is re-constructed query, self.max_tweet is not none
-
-            1.2 the query is start-up query, self.max_tweet is none
-        2. The query is pre-cursor-based, no tweets
+        Check if self.max_tweet is the very last tweet
+        if yes, return True
+        else, return False 
 
         '''
-        if response.url.find('max_position') > -1:
-        # if self.is_time_window_new:
-            print self.max_tweet['tweet_id']
-            Tracer()()
+        if self.max_tweet['tweet_id'] is self.very_last_tweet_id:
+            return True
         else:
-            Tracer()()
-            if response.url is self.start_urls[0]:
-                #check if the very last tweet fell in since_until time window
-                #if not, return True
-                #else return False
-                pass
-            else:
-                print self.max_tweet['tweet_id']
+            return False
+        # if response.url.find('max_position') > -1:
+        # # if self.is_time_window_new:
+        #     if self.max_tweet['tweet_id'] is self.very_last_tweet_id:
+        #         return True
+        #     else:
+        #         return False
+        # else:
+        #     if self.max_tweet['tweet_id'] is self.very_last_tweet_id:
+        #         return True
+        #     else:
+        #         return False

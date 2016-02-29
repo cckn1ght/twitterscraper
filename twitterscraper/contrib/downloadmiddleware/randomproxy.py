@@ -93,8 +93,8 @@ class RandomProxy(object):
 
             request.meta['proxy'] = proxy_address
 
-            print ('Changing to proxy <' + proxy_address + '>')
-            logger.info('Changing to proxy <%s>, %d proxies left' % (proxy_address, len(self.proxies)))
+            print ('Changing to proxy :' + proxy_address )
+            logger.info('Changing to proxy [%s], %d proxies left' % (proxy_address, len(self.proxies)))
 
             if proxy_user_pass:
                 basic_auth = 'Basic ' + base64.encodestring(proxy_user_pass)
@@ -117,9 +117,11 @@ class RandomProxy(object):
            logger.info('Response status: {0} using proxy {1} retrying request to {2}'.format(response.status, request.meta['proxy'], request.url))
            proxy = request.meta['proxy']
            del request.meta['proxy']
+           
            try:
                del self.proxies[proxy]
-               logger.info('Removing banned proxy <{0}>, {1} proxies left'.format(proxy, len(self.proxies)))
+               print ('403||404:Removing banned proxy <{0}>, {1} proxies left'.format(proxy, len(self.proxies)))
+               logger.info('Remov banned proxy <{0}>, {1} proxies left'.format(proxy, len(self.proxies)))
            except KeyError:
                pass
            return request
@@ -130,8 +132,10 @@ class RandomProxy(object):
             # Tracer()()
             proxy = request.meta['proxy']
             del request.meta['proxy']
+            # print ('Remove proxy in request.meta["proxy"]:' + proxy)
             try:
                 del self.proxies[proxy]
+                print ('Removed failed proxy <{0}>, {1} proxies left'.format(proxy, len(self.proxies)))
                 logger.info('Removing failed proxy <{0}>, {1} proxies left'.format(proxy, len(self.proxies)))
             except KeyError:
                 pass
