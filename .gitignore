@@ -64,3 +64,9 @@ logs/scrapy.log.4.bz2
 logs/scrapy.log.3.bz2
 
 *.bz2
+
+*.bz2
+
+logs/scrapy.log.3.bz2
+
+logs/scrapy.log.4.bz2
